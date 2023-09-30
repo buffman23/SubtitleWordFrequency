@@ -99,10 +99,10 @@ public class WordTableModel extends AbstractTableModel {
 	public void setValueAt(Object value, int rowIndex, int columnIndex)
 	{
 		if(columnIndex == HIDDEN_COLUMN)
-			wordFrequencyList.get(rowIndex).setHidden((Boolean)value);
+			getCurrentWordList().get(rowIndex).setHidden((Boolean)value);
 		
 		if(columnIndex == DEFINITION_COLUMN)
-			wordFrequencyList.get(rowIndex).setDefiniton(value.toString());
+			getCurrentWordList().get(rowIndex).setDefiniton(value.toString());
 	}
 	
 	public List<Word> getWordList() {

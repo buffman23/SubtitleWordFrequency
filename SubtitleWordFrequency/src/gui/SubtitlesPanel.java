@@ -236,7 +236,7 @@ public class SubtitlesPanel extends JPanel {
 		prev_button.setPreferredSize(new Dimension(maxWidthButton, prev_button.getPreferredSize().height));
 		next_button.setPreferredSize(new Dimension(maxWidthButton, next_button.getPreferredSize().height));
 		
-		toggleHidenButton = new JButton("Toggle Hidden");
+		toggleHidenButton = new JButton("Hide Hidden");
 		toggleHidenButton.setEnabled(false);
 		toggleHidenButton.addActionListener(e -> toggleHidden());
 		GridBagConstraints gbc_toggleHidenButton = new GridBagConstraints();
@@ -335,7 +335,13 @@ public class SubtitlesPanel extends JPanel {
 	
 	private void toggleHidden()
 	{
-		wordTableModel.setHiddenColumnEnabled(!wordTableModel.isHiddenColumnEnabled());
+		if(wordTableModel.isHiddenColumnEnabled()) {
+			wordTableModel.setHiddenColumnEnabled(false);
+			toggleHidenButton.setText("Show Hidden");
+		} else {
+			wordTableModel.setHiddenColumnEnabled(true);
+			toggleHidenButton.setText("Hide Hidden");
+		}
 		rebuildSorter();
 		updateTableInfoText();
 	}
