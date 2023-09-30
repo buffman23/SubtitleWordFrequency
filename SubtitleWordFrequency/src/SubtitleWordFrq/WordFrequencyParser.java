@@ -24,6 +24,16 @@ public class WordFrequencyParser {
 		return new ArrayList<>(wordMap.values());
 	}
 	
+	public String preprocessWord(String word)
+	{
+		for(Entry<String, String> entry : preprocessConfig.replaceMap.entrySet()) {
+			String key = "[" + Pattern.quote(entry.getKey()) + "]";
+			word = word.replaceAll(key,  entry.getValue());
+		}
+		
+		return word.replaceAll("\\s+", "");
+	}
+	
 	private void parseCaption(Caption caption, String subtitles, TreeMap<String,Word> wordMap){
 		String content = subtitles.substring(caption.textPosition, caption.textPosition + caption.textLength);
 		//private static final String DEFAULT_STRIP_STRING = "[" + Pattern.quote("[]{}<>,./?;:'\"\\|-=_+!@#$%^&*()~` …") + "]";

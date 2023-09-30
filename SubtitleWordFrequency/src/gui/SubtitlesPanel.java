@@ -2,6 +2,7 @@ package gui;
 
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
 import javax.swing.JTable;
 import java.awt.BorderLayout;
 import javax.swing.JLabel;
@@ -11,6 +12,7 @@ import javax.swing.JButton;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Highlighter.Highlight;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -39,6 +41,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.geom.Point2D;
 import java.awt.Color;
 import java.awt.Dimension;
 
@@ -46,9 +51,13 @@ import javax.swing.border.EmptyBorder;
 import java.awt.Font;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Component;
 import javax.swing.Box;
 
@@ -82,6 +91,8 @@ public class SubtitlesPanel extends JPanel {
 
 	private DocumentSubtitles foreignDocumentSubtitles;
 	private JLabel table_info_label;
+	private WordFrequencyParser wordFrequencyParser;
+	private JScrollPane scrollPane_table;
 
 	
 	public SubtitlesPanel() {
@@ -108,19 +119,19 @@ public class SubtitlesPanel extends JPanel {
 		DefaultTableCellRenderer leftRenderer = new DefaultTableCellRenderer();
 		leftRenderer.setHorizontalAlignment(JLabel.LEFT);
 		
-		JScrollPane scrollPane = new JScrollPane();
+		scrollPane_table = new JScrollPane();
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
 		gbc_scrollPane.fill = GridBagConstraints.BOTH;
 		gbc_scrollPane.gridx = 0;
 		gbc_scrollPane.gridy = 0;
-		table_panel.add(scrollPane, gbc_scrollPane);
+		table_panel.add(scrollPane_table, gbc_scrollPane);
 		wordTable = new JTable();
 		wordTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		wordTable.setFillsViewportHeight(true);
 		wordTable.setCellSelectionEnabled(true);
 		wordTable.getSelectionModel().addListSelectionListener(e -> wordTableRowSelected(e));
 		wordTable.setComponentPopupMenu(new TablePopup());
-		scrollPane.setViewportView(wordTable);
+		scrollPane_table.setViewportView(wordTable);
 		wordTable.setModel(wordTableModel);
 		wordTable.getColumnModel().getColumn(WordTableModel.WORD_COLUMN).setCellRenderer(leftRenderer);
 		wordTable.getColumnModel().getColumn(WordTableModel.DEFINITION_COLUMN).setCellRenderer(leftRenderer);
@@ -140,6 +151,7 @@ public class SubtitlesPanel extends JPanel {
 		
 		foreign_textpane = new JTextPane();
 		foreign_textpane.setEditable(false);
+		foreign_textpane.setComponentPopupMenu(new ForeignSubsPopup());
 		scrollPane_foreign.setViewportView(foreign_textpane);
 		
 		JLabel foreign_label = new JLabel("Foreign Language Subtitles");
@@ -261,10 +273,12 @@ public class SubtitlesPanel extends JPanel {
 		int selectedRow = wordTable.getSelectedRow();
 		if(selectedRow == -1) { // happens when hiding rows.
 			selectedWord = null;
+			setReferenceNavEnabled(false);
 			highlightCaption(foreign_textpane, null);
 			highlightCaption(primary_textpane, null);
 			return;
 		}
+		setReferenceNavEnabled(true);
 		
 		if(wordTable.getSelectedColumn() == WordTableModel.HIDDEN_COLUMN)
 			return;
@@ -379,8 +393,8 @@ public class SubtitlesPanel extends JPanel {
 		foreignDocumentSubtitles = new DocumentSubtitles(foreignSubtitleString);
 		foreign_textpane.setText(foreignSubtitleString);
 		
-		WordFrequencyParser wfp = new WordFrequencyParser();
-		List<Word> wordList = wfp.createWordFrequencyList(foreignSubtitleString, foreignDocumentSubtitles);
+		wordFrequencyParser = new WordFrequencyParser();
+		List<Word> wordList = wordFrequencyParser.createWordFrequencyList(foreignSubtitleString, foreignDocumentSubtitles);
 		wordTableModel.setWordList(wordList);
 		rebuildSorter();
 		
@@ -392,8 +406,7 @@ public class SubtitlesPanel extends JPanel {
 			foreignDocumentSubtitles.pairWith(primaryDocumentSubtitles);
 		}
 		
-		prev_button.setEnabled(true);
-		next_button.setEnabled(true);
+		setReferenceNavEnabled(true);
 		toggleHidenButton.setEnabled(true);
 		updateTableInfoText();
 	}
@@ -405,9 +418,7 @@ public class SubtitlesPanel extends JPanel {
 		foreign_textpane.setText("");
 		primary_textpane.setText("");
 		
-		nav_word_label.setText("(0/0)");
-		prev_button.setEnabled(false);
-		next_button.setEnabled(false);
+		setReferenceNavEnabled(false);
 		toggleHidenButton.setEnabled(false);
 		updateTableInfoText();
 	}
@@ -450,6 +461,19 @@ public class SubtitlesPanel extends JPanel {
 		return wordTable;
 	}
 	
+	private void setReferenceNavEnabled(boolean enabled) {
+		if(enabled)	{
+			nav_word_label.setText("(0/0)");
+			prev_button.setEnabled(false);
+			next_button.setEnabled(false); 
+		} else {
+			nav_word_label.setText("(0/0)");
+			prev_button.setEnabled(false);
+			next_button.setEnabled(false);
+		}
+		
+	}
+	
 	private class TablePopup extends JPopupMenu
 	{
 		ExportMenu exportMenu;
@@ -479,6 +503,112 @@ public class SubtitlesPanel extends JPanel {
 				word.setHidden(hidden);
 			}
 			wordTableModel.fireTableDataChanged();
+		}
+	}
+	
+	private class ForeignSubsPopup extends JPopupMenu implements PopupMenuListener
+	{
+		private int selectedRow;
+		private JMenuItem selectMenuItem;
+		
+		public ForeignSubsPopup()
+		{
+			selectMenuItem = new JMenuItem("Select");
+			selectMenuItem.addActionListener(e -> selectClicked());
+			add(selectMenuItem);
+			addPopupMenuListener(this);
+			selectedRow = -1;
+		}
+		
+		private void selectClicked()
+		{
+			if(selectedRow == -1)
+				return;
+			
+			wordTable.setRowSelectionInterval(selectedRow, selectedRow);
+			wordTable.addColumnSelectionInterval(0, wordTableModel.getColumnCount() - 1);
+			
+			Rectangle cellRect = wordTable.getCellRect(selectedRow, 0, true);
+			
+			// scrolling to the bottom first will ensure that 
+			// the highlighted selection is at the top of the table
+			JScrollBar vertical = scrollPane_table.getVerticalScrollBar();
+			vertical.setValue( vertical.getMaximum() );
+			
+			wordTable.scrollRectToVisible(cellRect);
+		}
+
+		@Override
+		public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+			int start;
+			int end;
+			
+			Highlight[] highlights = foreign_textpane.getHighlighter().getHighlights();
+			if(highlights.length != 0) {
+				Highlight highlight = highlights[0];
+				start = highlight.getStartOffset();
+				end = highlight.getEndOffset();
+			} else {
+				Point locationPoint = foreign_textpane.getMousePosition();
+				start = foreign_textpane.viewToModel2D(foreign_textpane.getMousePosition());
+				end = start;
+			}
+			
+			if(start == -1 || end == -1) {
+				selectedRow = -1;
+				return;
+			}
+			
+			
+			for(;start > 0 && !Character.isWhitespace(foreignSubtitleString.charAt(start)); --start);
+			for(;end < foreignSubtitleString.length() - 1 && !Character.isWhitespace(foreignSubtitleString.charAt(end)); ++end);
+			
+			String selectedWord = foreignSubtitleString.substring(start, end + 1).toLowerCase();
+			selectedWord = wordFrequencyParser.preprocessWord(selectedWord);
+			
+			// search for word in Model
+			int foundIndex = -1;
+			for(int i = 0; i < wordTableModel.getRowCount(); ++i) {
+				if(wordTableModel.getValueAt(i, WordTableModel.WORD_COLUMN).equals(selectedWord)) {
+					foundIndex = i;
+					break;
+				}
+			}
+			
+			if(foundIndex == -1) {
+				selectMenuItem.setEnabled(false);
+				selectMenuItem.setText(String.format("Select", selectedWord));
+				selectedWord = null;
+				selectedRow = -1;
+			} else {
+				selectMenuItem.setEnabled(true);
+				selectMenuItem.setText(String.format("Select (%s)", selectedWord));
+				selectedRow = wordTable.convertRowIndexToView(foundIndex);
+			}
+						
+			
+			
+			
+		}
+
+		@Override
+		public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void popupMenuCanceled(PopupMenuEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+	}
+	
+	private class PrimarySubsPopup extends JPopupMenu
+	{
+		public PrimarySubsPopup()
+		{
+			
 		}
 	}
 }
