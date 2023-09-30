@@ -11,7 +11,6 @@ import javax.swing.JButton;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -22,6 +21,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import SubtitleWordFrq.Caption;
 import SubtitleWordFrq.DocumentSubtitles;
+import SubtitleWordFrq.Utils;
 import SubtitleWordFrq.Word;
 import SubtitleWordFrq.WordFrequencyParser;
 
@@ -361,7 +361,7 @@ public class SubtitlesPanel extends JPanel {
 	        //viewRect = (Rectangle)foreign_textpane.modelToView2D(caption.textPosition + caption.textLength);
 	        //foreign_textpane.scrollRectToVisible(viewRect);
 		} catch (BadLocationException e) {
-			WFRQFrame.logger.severe(e.getMessage());
+			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
 		}
         

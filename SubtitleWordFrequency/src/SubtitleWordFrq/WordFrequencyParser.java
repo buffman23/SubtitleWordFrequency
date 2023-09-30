@@ -1,29 +1,19 @@
 package SubtitleWordFrq;
-import java.io.*;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import gui.SubtitlesPanel;
-
 public class WordFrequencyParser {
-	
-	private static final String DEFAULT_STRIP_STRING = "[" + Pattern.quote("[]{}<>,./?;:'\"\\|-=_+!@#$%^&*()~` …") + "]";
-	
-	private String stripRegex = DEFAULT_STRIP_STRING;
+		
+	private PreprocessConfig preprocessConfig;
 	
 	public WordFrequencyParser()
 	{
-		
-	}
-	
-	public WordFrequencyParser(String stripRegex)
-	{
-		this.stripRegex = stripRegex;
+		preprocessConfig = PreprocessConfig.load();
 	}
 
 	public ArrayList<Word> createWordFrequencyList(String subtitles, DocumentSubtitles documentSubtitles)
 	{
-
 		TreeMap<String, Word> wordMap = new TreeMap<>();
 		
 		for(Caption caption : documentSubtitles)
@@ -36,7 +26,12 @@ public class WordFrequencyParser {
 	
 	private void parseCaption(Caption caption, String subtitles, TreeMap<String,Word> wordMap){
 		String content = subtitles.substring(caption.textPosition, caption.textPosition + caption.textLength);
-		content = content.replaceAll(stripRegex,  " ");
+		//private static final String DEFAULT_STRIP_STRING = "[" + Pattern.quote("[]{}<>,./?;:'\"\\|-=_+!@#$%^&*()~` …") + "]";
+		for(Entry<String, String> entry : preprocessConfig.replaceMap.entrySet()) {
+			String key = "[" + Pattern.quote(entry.getKey()) + "]";
+			content = content.replaceAll(key,  entry.getValue());
+		}
+		
 		
 		String[] wordStrings = content.split("\\s+");
 		

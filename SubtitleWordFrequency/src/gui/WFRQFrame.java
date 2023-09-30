@@ -3,36 +3,20 @@ package gui;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 import java.awt.BorderLayout;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.logging.Logger;
-
-import javax.swing.JPanel;
 import javax.swing.ImageIcon;
-import javax.swing.JDesktopPane;
 import javax.swing.JFileChooser;
-import javax.swing.JInternalFrame;
-import java.awt.FlowLayout;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JLayeredPane;
-import javax.swing.JTable;
-import java.awt.CardLayout;
-import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
-import java.awt.Color;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.awt.event.ActionEvent;
+import SubtitleWordFrq.Utils;
 
 public class WFRQFrame extends JFrame {
-	public static final Logger logger = Logger.getLogger(WFRQFrame.class.getName());
-	
 	private SubtitlesPanel subtitles_panel;
 	private AnkiPanel anki_panel;
 
@@ -86,6 +70,22 @@ public class WFRQFrame extends JFrame {
 		JMenu help_menu = new JMenu("Help");
 		help_menu.setEnabled(false);
 		menuBar.add(help_menu);
+		
+		if(Boolean.getBoolean("debug")) {
+			File foreignLangFile = new File("sample_subtitles/barbarians-de.srt");
+			File primaryLangFile = new File("sample_subtitles/barbarians-en.srt");
+			
+			try {
+				subtitles_panel.loadSubtitles(foreignLangFile, primaryLangFile);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			open_subtitles_menuitem.setEnabled(false);
+			close_subtitles_menuitem.setEnabled(true);
+			export_menu.setEnabled(true);
+		}
 	}
 	
 	private void openClicked()
@@ -144,7 +144,7 @@ public class WFRQFrame extends JFrame {
 		try {
 			subtitles_panel.loadSubtitles(foreignLangFile, primaryLangFile);
 		} catch (IOException e) {
-			logger.severe(e.getMessage());
+			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
 		}
 		
@@ -169,7 +169,7 @@ public class WFRQFrame extends JFrame {
 	            UIManager.getSystemLookAndFeelClassName());
 	    } 
 	    catch (Exception e) {
-	       logger.severe(e.getMessage());
+	       Utils.logger.severe(e.getMessage());
 	    }
 		
 		WFRQFrame frame = new WFRQFrame();

@@ -87,7 +87,7 @@ public class ExportMenu extends JMenu
 			JOptionPane.showMessageDialog(null, "Exported to " + selectedFile.getName(), "Successful CSV Export", JOptionPane.INFORMATION_MESSAGE);
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(null, e.getMessage(), "Failed CSV Export", JOptionPane.ERROR_MESSAGE);
-			WFRQFrame.logger.severe(e.getMessage());
+			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
 		}
 	}

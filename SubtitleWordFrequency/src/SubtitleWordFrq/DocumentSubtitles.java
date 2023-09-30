@@ -1,21 +1,11 @@
 package SubtitleWordFrq;
 import java.io.*;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Spliterator;
-
-import javax.management.InstanceNotFoundException;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.MoveAction;
-import javax.swing.text.Caret;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class DocumentSubtitles implements Iterable<Caption> {
