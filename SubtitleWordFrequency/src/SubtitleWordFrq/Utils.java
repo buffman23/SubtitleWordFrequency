@@ -75,15 +75,22 @@ public class Utils {
 			// print last value separately avoid extra comma
 			pw.println(tableModel.getColumnName(columnCount - 1));
 			
-			for(int i : selectedRows.toArray()) {
-				int rowIndex = table.convertRowIndexToModel(i);
+			int[] rows = selectedRows.toArray();
+			for(int i = 0; i < rows.length; ++i) {
+				int rowIndex = table.convertRowIndexToModel(rows[i]);
 				for(int j = 0; j < columnCount - 1; ++j) {
 					String escapedValue = StringEscapeUtils.escapeCsv(tableModel.getValueAt(rowIndex, columnIndexTable[j]).toString());
 					pw.print(escapedValue);
 					pw.print(',');
 				}
 				// print last value separately avoid extra comma
-				pw.println(tableModel.getValueAt(i, columnCount - 1));
+				if(i == rows.length - 1) {
+					// don't add newline for last line in csv file
+					pw.print(tableModel.getValueAt(i, columnCount - 1));
+				} else {
+					pw.println(tableModel.getValueAt(i, columnCount - 1));
+
+				}
 			}
 		}
 	}
