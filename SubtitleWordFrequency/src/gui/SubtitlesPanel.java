@@ -19,6 +19,7 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import SubtitleWordFrq.Caption;
@@ -36,14 +37,12 @@ import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
 import java.io.File;
 import java.io.IOException;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.geom.Point2D;
 import java.awt.Color;
 import java.awt.Dimension;
 
@@ -81,7 +80,8 @@ public class SubtitlesPanel extends JPanel {
 	private TableRowSorter<WordTableModel> sorter;
 	private WordTableModel wordTableModel;
 	private Word selectedWord;
-	private int currentReference;
+	private int currentGoToReference;
+	private int initialGoToReference;
 	private JLabel nav_word_label;
 	private JScrollPane scrollPane_foreign;
 	private JScrollPane scrollPane_primary;
@@ -93,7 +93,6 @@ public class SubtitlesPanel extends JPanel {
 	private JLabel table_info_label;
 	private WordFrequencyParser wordFrequencyParser;
 	private JScrollPane scrollPane_table;
-
 	
 	public SubtitlesPanel() {
 		setLayout(new BorderLayout(0, 0));
@@ -286,24 +285,24 @@ public class SubtitlesPanel extends JPanel {
 		int selectedIndex = wordTable.convertRowIndexToModel(selectedRow);
 		
 		selectedWord = wordTableModel.getCurrentWordList().get(selectedIndex);
+		currentGoToReference = initialGoToReference;
 		updateReferenceNavText();
-		currentReference = 0;
-		highlightCaption(foreign_textpane, selectedWord.getReferences().get(currentReference));
+		highlightCaption(foreign_textpane, selectedWord.getReferences().get(currentGoToReference));
 		
 		
-		List<ImmutablePair<Caption, Integer>> pairedCaption = foreignDocumentSubtitles.getPairedCaptions(selectedWord.getReferences().get(currentReference));
+		List<ImmutablePair<Caption, Integer>> pairedCaption = foreignDocumentSubtitles.getPairedCaptions(selectedWord.getReferences().get(currentGoToReference));
 		if(pairedCaption != null)
 			highlightCaptions(primary_textpane, pairedCaption);
 	}
 	
 	private void prevRefBtnClicked()
 	{
-		currentReference = currentReference - 1;
-		if(currentReference == -1)
-			currentReference = selectedWord.getReferences().size() - 1;
-		highlightCaption(foreign_textpane, selectedWord.getReferences().get(currentReference));
+		currentGoToReference = currentGoToReference - 1;
+		if(currentGoToReference == -1)
+			currentGoToReference = selectedWord.getReferences().size() - 1;
+		highlightCaption(foreign_textpane, selectedWord.getReferences().get(currentGoToReference));
 		
-		List<ImmutablePair<Caption, Integer>> pairedCaption = foreignDocumentSubtitles.getPairedCaptions(selectedWord.getReferences().get(currentReference));
+		List<ImmutablePair<Caption, Integer>> pairedCaption = foreignDocumentSubtitles.getPairedCaptions(selectedWord.getReferences().get(currentGoToReference));
 		if(pairedCaption != null)
 			highlightCaptions(primary_textpane, pairedCaption);
 		
@@ -312,10 +311,10 @@ public class SubtitlesPanel extends JPanel {
 	
 	private void nextRefBtnClicked()
 	{
-		currentReference = (currentReference + 1) % selectedWord.getReferences().size();
-		highlightCaption(foreign_textpane, selectedWord.getReferences().get(currentReference));
+		currentGoToReference = (currentGoToReference + 1) % selectedWord.getReferences().size();
+		highlightCaption(foreign_textpane, selectedWord.getReferences().get(currentGoToReference));
 		
-		List<ImmutablePair<Caption, Integer>> pairedCaption = foreignDocumentSubtitles.getPairedCaptions(selectedWord.getReferences().get(currentReference));
+		List<ImmutablePair<Caption, Integer>> pairedCaption = foreignDocumentSubtitles.getPairedCaptions(selectedWord.getReferences().get(currentGoToReference));
 		if(pairedCaption != null)
 			highlightCaptions(primary_textpane, pairedCaption);
 		
@@ -369,10 +368,11 @@ public class SubtitlesPanel extends JPanel {
 		int scrollYPos = scrollPane.getVerticalScrollBar().getValue();
 		try {
 			viewRect = (Rectangle)textPane.modelToView2D(caption.startPosition);
-			
-			if(scrollYPos + viewportHeight - halfViewportHeight  < viewRect.y + viewRect.height) {
+			CharBuffer captionText = CharBuffer.wrap(textPane.getText()).subSequence(caption.textPosition, caption.textPosition + caption.textLength);
+			int captionHeight = viewRect.height * 3 + viewRect.height * StringUtils.countMatches(captionText, "\n");
+			if(scrollYPos + viewportHeight < viewRect.y + captionHeight) {
 				viewRect.y += halfViewportHeight;
-			} else if(scrollYPos > viewRect.y + viewRect.height + halfViewportHeight - halfViewportHeight) {
+			} else if(scrollYPos > viewRect.y) {
 				viewRect.y -= halfViewportHeight;
 			}
 			
@@ -406,7 +406,6 @@ public class SubtitlesPanel extends JPanel {
 			foreignDocumentSubtitles.pairWith(primaryDocumentSubtitles);
 		}
 		
-		setReferenceNavEnabled(true);
 		toggleHidenButton.setEnabled(true);
 		updateTableInfoText();
 	}
@@ -440,7 +439,7 @@ public class SubtitlesPanel extends JPanel {
 		
 		int totalReferences = selectedWord != null ? selectedWord.getReferences().size() : 0;
 			
-		String text = String.format("%s(%d/%d)", selectedWord, currentReference + 1, totalReferences);
+		String text = String.format("%s(%d/%d)", selectedWord, currentGoToReference + 1, totalReferences);
 		nav_word_label.setText(text);
 	}
 	
@@ -462,16 +461,11 @@ public class SubtitlesPanel extends JPanel {
 	}
 	
 	private void setReferenceNavEnabled(boolean enabled) {
-		if(enabled)	{
+		prev_button.setEnabled(enabled);
+		next_button.setEnabled(enabled); 
+		if(!enabled){
 			nav_word_label.setText("(0/0)");
-			prev_button.setEnabled(false);
-			next_button.setEnabled(false); 
-		} else {
-			nav_word_label.setText("(0/0)");
-			prev_button.setEnabled(false);
-			next_button.setEnabled(false);
 		}
-		
 	}
 	
 	private class TablePopup extends JPopupMenu
@@ -509,6 +503,7 @@ public class SubtitlesPanel extends JPanel {
 	private class ForeignSubsPopup extends JPopupMenu implements PopupMenuListener
 	{
 		private int selectedRow;
+		private int referenceNumber;
 		private JMenuItem selectMenuItem;
 		
 		public ForeignSubsPopup()
@@ -525,8 +520,11 @@ public class SubtitlesPanel extends JPanel {
 			if(selectedRow == -1)
 				return;
 			
+			// scroll to word in wordTable
+			initialGoToReference = referenceNumber;
 			wordTable.setRowSelectionInterval(selectedRow, selectedRow);
 			wordTable.addColumnSelectionInterval(0, wordTableModel.getColumnCount() - 1);
+			initialGoToReference = 0;
 			
 			Rectangle cellRect = wordTable.getCellRect(selectedRow, 0, true);
 			
@@ -559,8 +557,9 @@ public class SubtitlesPanel extends JPanel {
 				return;
 			}
 			
-			
 			for(;start > 0 && !Character.isWhitespace(foreignSubtitleString.charAt(start)); --start);
+			// remove the white space;
+			++start;
 			for(;end < foreignSubtitleString.length() - 1 && !Character.isWhitespace(foreignSubtitleString.charAt(end)); ++end);
 			
 			String selectedWord = foreignSubtitleString.substring(start, end + 1).toLowerCase();
@@ -584,11 +583,13 @@ public class SubtitlesPanel extends JPanel {
 				selectMenuItem.setEnabled(true);
 				selectMenuItem.setText(String.format("Select (%s)", selectedWord));
 				selectedRow = wordTable.convertRowIndexToView(foundIndex);
+				Caption selectedCaption = foreignDocumentSubtitles.getCaptionAtTextPostion(start);
+				if(selectedCaption != null)
+					referenceNumber = wordTableModel.getCurrentWordList().get(foundIndex).getReferences().indexOf(selectedCaption);
+				else {
+					referenceNumber = 0;
+				}
 			}
-						
-			
-			
-			
 		}
 
 		@Override

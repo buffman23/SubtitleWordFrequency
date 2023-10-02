@@ -1,10 +1,13 @@
 package SubtitleWordFrq;
+import java.nio.CharBuffer;
 import java.security.PublicKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class Caption {
+	public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
 	public int startPosition;
 	public int sequenceNumber;
 	public LocalTime startTime;
@@ -43,5 +46,18 @@ public class Caption {
 	public boolean isOverlappingExclusive(Caption other) {
 		return startTime.isBefore(other.endTime) && other.startTime.isBefore(endTime);
 		
+	}
+	
+	@Override
+	public String toString()
+	{
+
+		return String.format("%d\n%s --> %s\nFrom:%d To:%d", sequenceNumber, DTF.format(startTime), DTF.format(endTime), textPosition, textPosition + textLength);
+	}
+	
+	public String toString(String subtitlesString)
+	{
+		CharBuffer text = CharBuffer.wrap(subtitlesString).subSequence(textPosition, textPosition + textLength);
+		return String.format("%d\n%s --> %s\n%s", sequenceNumber, DTF.format(startTime), DTF.format(endTime), text);
 	}
 }

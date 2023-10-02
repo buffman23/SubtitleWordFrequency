@@ -11,7 +11,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 public class DocumentSubtitles implements Iterable<Caption> {
 	public static final int MATCH = 0, NO_MATCH = 1;
 	
-	private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
 	private List<Caption> captions;
 	private List<ImmutablePair<Caption, Integer>>[] pairedCaptions;
 	
@@ -56,8 +55,8 @@ public class DocumentSubtitles implements Iterable<Caption> {
 		line = br.readLine();
 		caret.moveLine(line);
 		String[] split = line.split(" --> ");
-		LocalTime begin = LocalTime.parse(split[0], dateTimeFormatter);
-		LocalTime end = LocalTime.parse(split[1], dateTimeFormatter);
+		LocalTime begin = LocalTime.parse(split[0], Caption.DTF);
+		LocalTime end = LocalTime.parse(split[1], Caption.DTF);
 		caption.startTime = begin;
 		caption.endTime = end;
 		
@@ -97,7 +96,16 @@ public class DocumentSubtitles implements Iterable<Caption> {
 			
 			if(caption.isOverlappingExclusive(otherCaption)) {
 				pairedCaptions[i].add(new ImmutablePair<>(otherCaption, MATCH));
-				++i;
+				if(j + 1 < otherSubtitles.captions.size()) {
+					Caption nextOtherCaption = otherCaptions.get(j + 1);
+					if(nextOtherCaption.startTime.isBefore(caption.endTime)) {
+						++j;
+					} else {
+						++i;
+					}
+				} else {
+					++i;
+				}
 			} else if(caption.isBefore(otherCaption)){
 				Caption tempCaption = (j != 0 ? otherCaptions.get(j - 1) : otherCaption);
 				pairedCaptions[i].add(new ImmutablePair<Caption, Integer>(tempCaption, NO_MATCH));
@@ -113,6 +121,17 @@ public class DocumentSubtitles implements Iterable<Caption> {
 		for(;i < captions.size(); ++i) {
 			pairedCaptions[i].add(new ImmutablePair<>(otherCaption, NO_MATCH));
 		}
+	}
+	
+	public Caption getCaptionAtTextPostion(int textPosition)
+	{
+		// TODO optimize by using binary search
+		for(Caption caption : captions) {
+			if(textPosition >= caption.textPosition && textPosition < (caption.textPosition + caption.textLength))
+				return caption;
+		}
+		
+		return null;
 	}
 	
 	public List<Caption> getCaptions() {
