@@ -3,6 +3,8 @@ package SubtitleWordFrq;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class Word {
 	private String value;
 	private int count; // frequency
@@ -135,6 +137,13 @@ public class Word {
 
 	public void setDefiniton(String definiton) {
 		this.definiton = definiton;
+	}
+	
+	public void setCapitalized(boolean capitalized) {
+		if(capitalized) 
+			value = StringUtils.capitalize(value);
+		 else 
+			value = StringUtils.uncapitalize(value);
 	}
 
 	@Override

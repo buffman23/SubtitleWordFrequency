@@ -16,7 +16,7 @@ public class WordTableModel extends AbstractTableModel {
 			FOREIGN_EXAMPLE = 3, PRIMARY_EXAMPLE = 4, HIDDEN_COLUMN = 5;
 	private static final String[] COLUMN_NAMES = new String[] { "Word", "Definition", "Count", "Foreign Example", "Primary Example", "Hidden" };
 	private static final Class<?>[] COLUMN_CLASSES = new Class<?>[] { 
-		String.class, String.class, Integer.class, String.class, String.class, Boolean.class
+		Word.class, String.class, Integer.class, String.class, String.class, Boolean.class
 	};
 	private List<Word> wordFrequencyList;
 	private List<Word> notHiddenList;
@@ -80,7 +80,7 @@ public class WordTableModel extends AbstractTableModel {
 		switch(columnIndex) 
 		{
 			case WORD_COLUMN:
-				return word.toString();
+				return word;
 			case DEFINITION_COLUMN:
 				return word.getDefiniton();
 			case COUNT_COLUMN:

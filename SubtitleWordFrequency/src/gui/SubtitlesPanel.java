@@ -18,7 +18,9 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.ThresholdingOutputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.WordUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import SubtitleWordFrq.Caption;
@@ -57,6 +59,7 @@ import javax.swing.event.PopupMenuListener;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Component;
 import javax.swing.Box;
 
@@ -477,14 +480,19 @@ public class SubtitlesPanel extends JPanel {
 		}
 	}
 	
-	private class TablePopup extends JPopupMenu
+	private class TablePopup extends JPopupMenu implements PopupMenuListener
 	{
 		ExportMenu exportMenu;
+		JMenuItem capitalizeMenu;
+		boolean capitalize;
 		
 		public TablePopup()
 		{
 			exportMenu = new ExportMenu(wordTable, true);
 			this.add(exportMenu);
+			
+			capitalizeMenu = new JMenuItem();
+			capitalizeMenu.addActionListener(e -> capitalizeClicked());
 			
 			JMenu toggleHiddenMenu = new JMenu("Toggle Hidden");
 			this.add(toggleHiddenMenu);
@@ -496,6 +504,8 @@ public class SubtitlesPanel extends JPanel {
 			JMenuItem toggleHiddenOffMenuItem = new JMenuItem("Off");
 			toggleHiddenOffMenuItem.addActionListener(e -> toggleHidden(false));
 			toggleHiddenMenu.add(toggleHiddenOffMenuItem);
+			
+			this.addPopupMenuListener(this);
 		}
 		
 		private void toggleHidden(boolean hidden)
@@ -507,6 +517,49 @@ public class SubtitlesPanel extends JPanel {
 			}
 			wordTableModel.fireTableDataChanged();
 		}
+		
+		private void capitalizeClicked()
+		{
+			for(int row : wordTable.getSelectedRows()) {
+				int selectedModelRow = wordTable.convertRowIndexToModel(row);
+				Word selectedWord = (Word)wordTableModel.getValueAt(selectedModelRow, WordTableModel.WORD_COLUMN);
+				selectedWord.setCapitalized(capitalize);
+				wordTableModel.fireTableCellUpdated(selectedModelRow, WordTableModel.WORD_COLUMN);
+			}
+			
+		}
+
+		@Override
+		public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+			if(wordTable.getSelectedRowCount() == 0) {
+				this.remove(capitalizeMenu);
+				return;
+			}
+			int selectedViewColumn = wordTable.getSelectedColumn();
+			int selectedModelColumn = wordTable.convertColumnIndexToModel(selectedViewColumn);
+			
+			if(selectedModelColumn ==  WordTableModel.WORD_COLUMN) {
+				String targetWord = "...";
+				if(wordTable.getSelectedRowCount() == 1)
+					targetWord = selectedWord.toString();
+				if(Character.isUpperCase(selectedWord.toString().charAt(0))) {
+					capitalizeMenu.setText(String.format("Uncapitalize (%s)", targetWord));
+					capitalize = false;
+				} else {
+					capitalizeMenu.setText(String.format("Capitalize (%s)", targetWord));
+					capitalize = true;
+				}
+				this.add(capitalizeMenu, 0);
+			} else {
+				this.remove(capitalizeMenu);
+			}
+		}
+
+		@Override
+		public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+
+		@Override
+		public void popupMenuCanceled(PopupMenuEvent e) {}
 	}
 	
 	private class ForeignSubsPopup extends JPopupMenu implements PopupMenuListener
@@ -518,6 +571,7 @@ public class SubtitlesPanel extends JPanel {
 			setExampleMenuItem = new JMenuItem();
 			setExampleMenuItem.addActionListener(e -> setExampleClicked());
 			add(setExampleMenuItem);
+			
 			addPopupMenuListener(this);
 		}
 		
@@ -599,7 +653,11 @@ public class SubtitlesPanel extends JPanel {
 	{
 		@Override
 		public void mouseClicked(MouseEvent e) {
-			int start = foreign_textpane.viewToModel2D(foreign_textpane.getMousePosition());
+			Point mousePos = foreign_textpane.getMousePosition();
+			if(mousePos == null)
+				return;
+			
+			int start = foreign_textpane.viewToModel2D(mousePos);
 			
 			if(start == -1) {
 				return;
@@ -617,7 +675,7 @@ public class SubtitlesPanel extends JPanel {
 			// search for word in Model
 			int foundIndex = -1;
 			for(int i = 0; i < wordTableModel.getRowCount(); ++i) {
-				if(wordTableModel.getValueAt(i, WordTableModel.WORD_COLUMN).equals(selectedString)) {
+				if(wordTableModel.getValueAt(i, WordTableModel.WORD_COLUMN).toString().equalsIgnoreCase(selectedString)) {
 					foundIndex = i;
 					break;
 				}
