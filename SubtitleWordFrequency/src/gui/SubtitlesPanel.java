@@ -482,15 +482,11 @@ public class SubtitlesPanel extends JPanel {
 	
 	private class TablePopup extends JPopupMenu implements PopupMenuListener
 	{
-		ExportMenu exportMenu;
 		JMenuItem capitalizeMenu;
 		boolean capitalize;
 		
 		public TablePopup()
 		{
-			exportMenu = new ExportMenu(wordTable, true);
-			this.add(exportMenu);
-			
 			capitalizeMenu = new JMenuItem();
 			capitalizeMenu.addActionListener(e -> capitalizeClicked());
 			

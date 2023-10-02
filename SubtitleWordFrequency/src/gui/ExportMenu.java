@@ -29,21 +29,15 @@ public class ExportMenu extends JMenu
 		
 		this.table = table;
 		
-		if(popupExportMenu) {
-			JMenu exportCSVMenu = new JMenu("CSV");
-			JMenuItem exportCSVAllMenuItem = new JMenuItem("All");
-			exportCSVAllMenuItem.addActionListener(e -> exportCSVClicked(true));
-			exportCSVMenu.add(exportCSVAllMenuItem);
-			
-			JMenuItem exportCSVSelectedMenuItem = new JMenuItem("Selected");
-			exportCSVSelectedMenuItem.addActionListener(e -> exportCSVClicked(false));
-			exportCSVMenu.add(exportCSVSelectedMenuItem);
-			this.add(exportCSVMenu);
-		} else {
-			JMenuItem exportCSVMenuItem = new JMenuItem("CSV");
-			exportCSVMenuItem.addActionListener(e -> exportCSVClicked(true));
-			this.add(exportCSVMenuItem);
-		}
+		JMenu exportCSVMenu = new JMenu("CSV");
+		JMenuItem exportCSVAllMenuItem = new JMenuItem("All");
+		exportCSVAllMenuItem.addActionListener(e -> exportCSVClicked(true));
+		exportCSVMenu.add(exportCSVAllMenuItem);
+		
+		JMenuItem exportCSVSelectedMenuItem = new JMenuItem("Selected");
+		exportCSVSelectedMenuItem.addActionListener(e -> exportCSVClicked(false));
+		exportCSVMenu.add(exportCSVSelectedMenuItem);
+		this.add(exportCSVMenu);
 		
 		exportHiddenWordListMenuItem = new JMenuItem("Hidden Word List");
 		exportHiddenWordListMenuItem.addActionListener(e -> exportHiddenWordListClicked());

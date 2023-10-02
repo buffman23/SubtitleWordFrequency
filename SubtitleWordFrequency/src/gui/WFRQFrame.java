@@ -18,7 +18,6 @@ import SubtitleWordFrq.Utils;
 
 public class WFRQFrame extends JFrame {
 	private SubtitlesPanel subtitles_panel;
-	private AnkiPanel anki_panel;
 
 	private JMenuItem close_subtitles_menuitem;
 
@@ -27,14 +26,8 @@ public class WFRQFrame extends JFrame {
 	private JMenu export_menu;
 	
 	public WFRQFrame() {
-		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		getContentPane().add(tabbedPane, BorderLayout.CENTER);
-		
 		subtitles_panel = new SubtitlesPanel();
-		tabbedPane.addTab("Subtitles", null, subtitles_panel, null);
-		
-		anki_panel = new AnkiPanel();
-		tabbedPane.addTab("Anki Connect", new ImageIcon(WFRQFrame.class.getResource("/resources/anki_icon.png")), anki_panel, null);
+		getContentPane().add(subtitles_panel, BorderLayout.CENTER);
 		
 		JMenuBar menuBar = new JMenuBar();
 		getContentPane().add(menuBar, BorderLayout.NORTH);
