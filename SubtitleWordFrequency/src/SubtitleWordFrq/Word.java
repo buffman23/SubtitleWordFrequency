@@ -8,6 +8,7 @@ public class Word {
 	private int count; // frequency
 	private String definiton;
 	private boolean hidden; // if user would like to hide word (b/c they already know it)
+	private int selectedReferenceIndex;
 	private List<Caption> references;
 	private List<Word> associatedWords;
 	
@@ -114,6 +115,22 @@ public class Word {
 	
 	public String getDefiniton() {
 		return definiton;
+	}
+	
+	public int getSelectedReferenceIndex() {
+		return selectedReferenceIndex;
+	}
+	
+	public Caption getSelectedReference() {
+		return references.get(selectedReferenceIndex);
+	}
+
+	public void setSelectedReferenceIndex(int selectedReference) {
+		this.selectedReferenceIndex = selectedReference;
+	}
+	
+	public void setSelectedReference(Caption selectedReference) {
+		this.selectedReferenceIndex = references.indexOf(selectedReference);
 	}
 
 	public void setDefiniton(String definiton) {

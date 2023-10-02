@@ -1,7 +1,7 @@
 package SubtitleWordFrq;
 import java.io.*;
+import java.nio.CharBuffer;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -13,16 +13,19 @@ public class DocumentSubtitles implements Iterable<Caption> {
 	
 	private List<Caption> captions;
 	private List<ImmutablePair<Caption, Integer>>[] pairedCaptions;
+	private String text;
 	
 	public DocumentSubtitles(String subtitles) throws IOException
 	{
 		captions = new ArrayList<Caption>();
+		text = subtitles;
 		
 		try(BufferedReader br = new BufferedReader(new StringReader(subtitles))) {
 			Caret caret = new Caret();
 			Caption caption;
 			while((caption = parseCaption(br, caret)) != null) {
 				captions.add(caption);
+				caption.text = CharBuffer.wrap(subtitles).subSequence(caption.textPosition, caption.textPosition + caption.textLength);
 			}
 		}
 	}
@@ -73,7 +76,6 @@ public class DocumentSubtitles implements Iterable<Caption> {
 			length += line.length() + (length > 0 ? 1 : 0); // don't count newline if first time
 		}
 		caption.textLength = length;
-		
 		return caption;
 	}
 	
@@ -163,5 +165,8 @@ public class DocumentSubtitles implements Iterable<Caption> {
 	public Iterator<Caption> iterator() {
 		return captions.iterator();
 	}
-	
+
+	public String getText() {
+		return text;
+	}
 }

@@ -6,22 +6,28 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.swing.table.AbstractTableModel;
-
+import SubtitleWordFrq.Caption;
+import SubtitleWordFrq.DocumentSubtitles;
 import SubtitleWordFrq.Word;
 
 public class WordTableModel extends AbstractTableModel {
 
-	public static final int WORD_COLUMN = 0,  COUNT_COLUMN = 1, DEFINITION_COLUMN = 2, HIDDEN_COLUMN = 3;
-	private static final String[] COLUMN_NAMES = new String[] { "Word", "Count", "Definition", "Hidden" };
+	public static final int WORD_COLUMN = 0,  DEFINITION_COLUMN = 1, COUNT_COLUMN = 2,
+			FOREIGN_EXAMPLE = 3, PRIMARY_EXAMPLE = 4, HIDDEN_COLUMN = 5;
+	private static final String[] COLUMN_NAMES = new String[] { "Word", "Definition", "Count", "Foreign Example", "Primary Example", "Hidden" };
+	private static final Class<?>[] COLUMN_CLASSES = new Class<?>[] { 
+		String.class, String.class, Integer.class, String.class, String.class, Boolean.class
+	};
 	private List<Word> wordFrequencyList;
 	private List<Word> notHiddenList;
+	private DocumentSubtitles documentSubtitles;
 	private boolean hiddenColumnEnabled;
 	private static final Predicate<Word> IS_NOT_HIDDEN_PREDICATE = word -> !word.isHidden();
 
-	public WordTableModel(List<Word> wordFrequencyList)
+	public WordTableModel(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles)
 	{
 		this.hiddenColumnEnabled = true;
-		setWordList(wordFrequencyList);
+		this.setData(wordFrequencyList, documentSubtitles);
 	}
 	
 	@Override
@@ -42,19 +48,7 @@ public class WordTableModel extends AbstractTableModel {
 	@Override
 	public Class<?> getColumnClass(int columnIndex)
 	{
-		if(columnIndex == WORD_COLUMN)
-			return Word.class;
-		
-		if(columnIndex == DEFINITION_COLUMN)
-			return String.class;
-		
-		if(columnIndex == COUNT_COLUMN)
-			return Integer.class;
-		
-		if(columnIndex == HIDDEN_COLUMN)
-			return Boolean.class;
-					
-		return Object.class;	
+		return COLUMN_CLASSES[columnIndex];	
 	}
 	
 	@Override
@@ -70,7 +64,7 @@ public class WordTableModel extends AbstractTableModel {
 
 	@Override
 	public int getColumnCount() {
-		return 3 + (hiddenColumnEnabled ? 1 : 0);
+		return 5 + (hiddenColumnEnabled ? 1 : 0);
 	}
 
 	@Override
@@ -83,16 +77,31 @@ public class WordTableModel extends AbstractTableModel {
 			word = notHiddenList.get(rowIndex);
 		}
 		
-		if(columnIndex == WORD_COLUMN)
-			return word.toString();
-		if(columnIndex == DEFINITION_COLUMN)
-			return word.getDefiniton();
-		if(columnIndex == COUNT_COLUMN)
-			return word.getCount();
-		if(columnIndex == HIDDEN_COLUMN)
-			return word.isHidden();
+		switch(columnIndex) 
+		{
+			case WORD_COLUMN:
+				return word.toString();
+			case DEFINITION_COLUMN:
+				return word.getDefiniton();
+			case COUNT_COLUMN:
+				return word.getCount();
+			case FOREIGN_EXAMPLE:
+				return word.getSelectedReference().text;
+			case PRIMARY_EXAMPLE:
+				Caption selectedReference = word.getSelectedReference();
+				if(documentSubtitles.getPairedCaptions(selectedReference).stream()
+						.anyMatch(pair -> pair.right == DocumentSubtitles.NO_MATCH))
+					return "";
+				return documentSubtitles.getPairedCaptions(selectedReference).stream()
+						.map(pair -> pair.left)
+						.map(caption -> caption.text)
+						.collect(Collectors.joining(" "));
+						//TODO make joining string configurable
+			case HIDDEN_COLUMN:
+				return word.isHidden();
+		}
 		
-		return "";
+		return null;
 	}
 	
 	@Override
@@ -122,13 +131,14 @@ public class WordTableModel extends AbstractTableModel {
 			return Collections.unmodifiableList(notHiddenList);
 	}
 
-	public void setWordList(List<Word> wordFrequencyList) {
-		this.fireTableDataChanged();
+	public void setData(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles) {
 		this.wordFrequencyList = wordFrequencyList;
+		this.documentSubtitles = documentSubtitles;
 		this.notHiddenList = null;
 		
 		if(!hiddenColumnEnabled)
 			validateNotHiddenList();
+		this.fireTableDataChanged();
 	}
 	
 	public boolean isHiddenColumnEnabled() {

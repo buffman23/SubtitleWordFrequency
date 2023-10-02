@@ -14,19 +14,21 @@ public class Caption {
 	public LocalTime endTime;
 	public int textPosition;
 	public int textLength;
+	public CharBuffer text;
 	
 	public Caption()
 	{
 		
 	}
 	
-	public Caption(int captionPosition, int sequenceNumber, LocalTime startTime, LocalTime endTime, int textIndex, int textLength) {
+	public Caption(int captionPosition, int sequenceNumber, LocalTime startTime, LocalTime endTime, int textIndex, int textLength, CharBuffer text) {
 		this.startPosition = captionPosition;
 		this.sequenceNumber = sequenceNumber;
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.textPosition = textIndex;
 		this.textLength = textLength;
+		this.text = text;
 	}
 	
 	public boolean isBefore(Caption other) {
@@ -51,13 +53,7 @@ public class Caption {
 	@Override
 	public String toString()
 	{
-
-		return String.format("%d\n%s --> %s\nFrom:%d To:%d", sequenceNumber, DTF.format(startTime), DTF.format(endTime), textPosition, textPosition + textLength);
-	}
-	
-	public String toString(String subtitlesString)
-	{
-		CharBuffer text = CharBuffer.wrap(subtitlesString).subSequence(textPosition, textPosition + textLength);
-		return String.format("%d\n%s --> %s\n%s", sequenceNumber, DTF.format(startTime), DTF.format(endTime), text);
+		//return String.format("%d\n%s --> %s\nFrom:%d To:%d", sequenceNumber, DTF.format(startTime), DTF.format(endTime), textPosition, textPosition + textLength);
+		return text.toString();
 	}
 }

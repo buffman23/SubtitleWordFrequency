@@ -12,7 +12,6 @@ import javax.swing.JButton;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.Highlighter.Highlight;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -43,6 +42,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.Color;
 import java.awt.Dimension;
 
@@ -56,32 +57,35 @@ import javax.swing.event.PopupMenuListener;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.awt.Point;
 import java.awt.Component;
 import javax.swing.Box;
 
 public class SubtitlesPanel extends JPanel {
 	private static final SimpleAttributeSet YELLOW_HIGHLIGHT;
 	private static final SimpleAttributeSet ORANGE_HIGHLIGHT;
+	private static final SimpleAttributeSet NO_HIGHLIGHT;
 	static {
 		YELLOW_HIGHLIGHT = new SimpleAttributeSet();
 	    StyleConstants.setBackground(YELLOW_HIGHLIGHT, Color.YELLOW);
 	    
 	    ORANGE_HIGHLIGHT = new SimpleAttributeSet();
 	    StyleConstants.setBackground(ORANGE_HIGHLIGHT, Color.ORANGE);
+	    
+	    NO_HIGHLIGHT = new SimpleAttributeSet();
+	    StyleConstants.setBackground(NO_HIGHLIGHT, new Color(0, 0, 0, 0));
 	}
 	
 	private String foreignSubtitleString;
 	private String primarySubtitleString;
 	
-	private JTextPane foreign_textpane;
-	private JTextPane primary_textpane;
+	private SubtitleTextPane foreign_textpane;
+	private SubtitleTextPane primary_textpane;
 	private JTable wordTable;
 	private TableRowSorter<WordTableModel> sorter;
 	private WordTableModel wordTableModel;
 	private Word selectedWord;
 	private int currentGoToReference;
-	private int initialGoToReference;
+	private int initialGoToReference = -1;
 	private JLabel nav_word_label;
 	private JScrollPane scrollPane_foreign;
 	private JScrollPane scrollPane_primary;
@@ -112,7 +116,7 @@ public class SubtitlesPanel extends JPanel {
 		gbl_table_panel.rowWeights = new double[]{1.0, 0.0};
 		table_panel.setLayout(gbl_table_panel);
 		
-		wordTableModel = new WordTableModel(null);
+		wordTableModel = new WordTableModel(null, null);
 		
 		
 		DefaultTableCellRenderer leftRenderer = new DefaultTableCellRenderer();
@@ -135,7 +139,6 @@ public class SubtitlesPanel extends JPanel {
 		wordTable.getColumnModel().getColumn(WordTableModel.WORD_COLUMN).setCellRenderer(leftRenderer);
 		wordTable.getColumnModel().getColumn(WordTableModel.DEFINITION_COLUMN).setCellRenderer(leftRenderer);
 		wordTable.getColumnModel().getColumn(WordTableModel.COUNT_COLUMN).setCellRenderer(leftRenderer);
-		
 		JPanel sub_view_panel = new JPanel();
 		splitPane_1.setRightComponent(sub_view_panel);
 		sub_view_panel.setLayout(new GridLayout(0, 2, 0, 0));
@@ -148,9 +151,10 @@ public class SubtitlesPanel extends JPanel {
 		scrollPane_foreign = new JScrollPane();
 		foreign_panel.add(scrollPane_foreign);
 		
-		foreign_textpane = new JTextPane();
+		foreign_textpane = new SubtitleTextPane(null);
 		foreign_textpane.setEditable(false);
 		foreign_textpane.setComponentPopupMenu(new ForeignSubsPopup());
+		foreign_textpane.addMouseListener(new WordClickAdapter());
 		scrollPane_foreign.setViewportView(foreign_textpane);
 		
 		JLabel foreign_label = new JLabel("Foreign Language Subtitles");
@@ -165,8 +169,9 @@ public class SubtitlesPanel extends JPanel {
 		scrollPane_primary = new JScrollPane();
 		primary_panel.add(scrollPane_primary);
 		
-		primary_textpane = new JTextPane();
+		primary_textpane = new SubtitleTextPane(null);
 		primary_textpane.setEditable(false);
+		primary_textpane.setComponentPopupMenu(new PrimarySubsPopup());
 		scrollPane_primary.setViewportView(primary_textpane);
 		
 		JLabel native_label = new JLabel("Primary Language Subtitles");
@@ -285,7 +290,7 @@ public class SubtitlesPanel extends JPanel {
 		int selectedIndex = wordTable.convertRowIndexToModel(selectedRow);
 		
 		selectedWord = wordTableModel.getCurrentWordList().get(selectedIndex);
-		currentGoToReference = initialGoToReference;
+		currentGoToReference = initialGoToReference != -1 ? initialGoToReference : selectedWord.getSelectedReferenceIndex();
 		updateReferenceNavText();
 		highlightCaption(foreign_textpane, selectedWord.getReferences().get(currentGoToReference));
 		
@@ -332,7 +337,7 @@ public class SubtitlesPanel extends JPanel {
 		Style defaultStyle = StyleContext.
 				   getDefaultStyleContext().
 				   getStyle(StyleContext.DEFAULT_STYLE);
-		textPane.getStyledDocument().setCharacterAttributes(0, textPane.getDocument().getLength(), defaultStyle, true);
+		textPane.getStyledDocument().setCharacterAttributes(0, textPane.getDocument().getLength(), NO_HIGHLIGHT, true);
 				
 		if(selectedWord == null)
 			return;
@@ -391,16 +396,18 @@ public class SubtitlesPanel extends JPanel {
 	{
 		foreignSubtitleString = FileUtils.readFileToString(foreignLangFile, Charset.forName("UTF-8"));
 		foreignDocumentSubtitles = new DocumentSubtitles(foreignSubtitleString);
+		foreign_textpane.setDocumentSubtitles(foreignDocumentSubtitles);
 		foreign_textpane.setText(foreignSubtitleString);
 		
 		wordFrequencyParser = new WordFrequencyParser();
 		List<Word> wordList = wordFrequencyParser.createWordFrequencyList(foreignSubtitleString, foreignDocumentSubtitles);
-		wordTableModel.setWordList(wordList);
+		wordTableModel.setData(wordList, foreignDocumentSubtitles);
 		rebuildSorter();
 		
 		if(primaryLangFile != null) {
 			String primarySubtitles = FileUtils.readFileToString(primaryLangFile, Charset.forName("UTF-8"));
 			DocumentSubtitles primaryDocumentSubtitles = new DocumentSubtitles(primarySubtitles);
+			primary_textpane.setDocumentSubtitles(primaryDocumentSubtitles);
 			primary_textpane.setText(primarySubtitles);
 			
 			foreignDocumentSubtitles.pairWith(primaryDocumentSubtitles);
@@ -413,9 +420,11 @@ public class SubtitlesPanel extends JPanel {
 	public void unloadSubtitles()
 	{
 		wordTable.setRowSorter(null);
-		wordTableModel.setWordList(null);
+		wordTableModel.setData(null, null);
 		foreign_textpane.setText("");
+		foreign_textpane.setDocumentSubtitles(null);
 		primary_textpane.setText("");
+		primary_textpane.setDocumentSubtitles(null);
 		
 		setReferenceNavEnabled(false);
 		toggleHidenButton.setEnabled(false);
@@ -428,7 +437,7 @@ public class SubtitlesPanel extends JPanel {
 		ArrayList<RowSorter.SortKey> list = new ArrayList<>();
 		list.add(new RowSorter.SortKey(WordTableModel.COUNT_COLUMN, SortOrder.DESCENDING));
 		list.add(new RowSorter.SortKey(WordTableModel.WORD_COLUMN, SortOrder.ASCENDING));
-		if(wordTableModel.getColumnCount() == 4)
+		if(wordTableModel.getColumnCount() == 6)
 			list.add(new RowSorter.SortKey(WordTableModel.HIDDEN_COLUMN, SortOrder.ASCENDING));
 		sorter.setSortKeys(list);
 		wordTable.setRowSorter(sorter);	
@@ -502,29 +511,136 @@ public class SubtitlesPanel extends JPanel {
 	
 	private class ForeignSubsPopup extends JPopupMenu implements PopupMenuListener
 	{
-		private int selectedRow;
-		private int referenceNumber;
-		private JMenuItem selectMenuItem;
+		private JMenuItem setExampleMenuItem;
 		
 		public ForeignSubsPopup()
 		{
-			selectMenuItem = new JMenuItem("Select");
-			selectMenuItem.addActionListener(e -> selectClicked());
-			add(selectMenuItem);
+			setExampleMenuItem = new JMenuItem();
+			setExampleMenuItem.addActionListener(e -> setExampleClicked());
+			add(setExampleMenuItem);
 			addPopupMenuListener(this);
-			selectedRow = -1;
 		}
 		
-		private void selectClicked()
+		private void setExampleClicked()
 		{
-			if(selectedRow == -1)
+			if(selectedWord != null) {
+				selectedWord.setSelectedReferenceIndex(currentGoToReference);
+				int selectedModelRow = wordTable.convertRowIndexToModel(wordTable.getSelectedRow());
+				wordTableModel.fireTableRowsUpdated(selectedModelRow, selectedModelRow);
+			}
+		}
+
+		@Override
+		public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+			String wordString = "";
+			if(selectedWord == null) {
+				setExampleMenuItem.setEnabled(false);
+			} else {
+				wordString = selectedWord.toString();
+				setExampleMenuItem.setEnabled(true);
+			}
+			setExampleMenuItem.setText(String.format("Set as example for \"%s\"", wordString));
+		}
+
+		@Override
+		public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+
+		@Override
+		public void popupMenuCanceled(PopupMenuEvent e) {}
+	}
+	
+	private class PrimarySubsPopup extends JPopupMenu implements PopupMenuListener
+	{
+		private JMenuItem defineMenuItem;
+		private String definitionText;
+		
+		public PrimarySubsPopup()
+		{
+			defineMenuItem = new JMenuItem();
+			defineMenuItem.addActionListener(e -> defineClicked());
+			add(defineMenuItem);
+			addPopupMenuListener(this);
+		}
+		
+		private void defineClicked()
+		{
+			if(selectedWord != null) {
+				selectedWord.setDefiniton(definitionText);
+				int selectedModelRow = wordTable.convertRowIndexToModel(wordTable.getSelectedRow());
+				int selectedModelColumn = wordTable.convertColumnIndexToModel(WordTableModel.DEFINITION_COLUMN);
+				wordTableModel.fireTableCellUpdated(selectedModelRow, selectedModelColumn);
+			}
+		}
+
+		@Override
+		public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+			String wordString = "";
+			definitionText = primary_textpane.getHighlightedText();
+			if(definitionText == null)
+				definitionText = primary_textpane.getHoveredText();
+			
+			if(selectedWord == null) {
+				defineMenuItem.setEnabled(false);
+			} else {
+				wordString = selectedWord.toString();
+				defineMenuItem.setEnabled(definitionText != null);
+			}
+			defineMenuItem.setText(String.format("Set as definition for \"%s\"", wordString));
+		}
+
+		@Override
+		public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+
+		@Override
+		public void popupMenuCanceled(PopupMenuEvent e) {}
+	}
+	
+	private class WordClickAdapter extends MouseAdapter
+	{
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			int start = foreign_textpane.viewToModel2D(foreign_textpane.getMousePosition());
+			
+			if(start == -1) {
 				return;
+			}
+			
+			for(;start > 0 && !Character.isWhitespace(foreignSubtitleString.charAt(start)); --start);
+			// remove the white space;
+			++start;
+			int end = start;
+			for(;end < foreignSubtitleString.length() - 1 && !Character.isWhitespace(foreignSubtitleString.charAt(end)); ++end);
+			
+			String selectedString = foreignSubtitleString.substring(start, end + 1).toLowerCase();
+			selectedString = wordFrequencyParser.preprocessWord(selectedString);
+			
+			// search for word in Model
+			int foundIndex = -1;
+			for(int i = 0; i < wordTableModel.getRowCount(); ++i) {
+				if(wordTableModel.getValueAt(i, WordTableModel.WORD_COLUMN).equals(selectedString)) {
+					foundIndex = i;
+					break;
+				}
+			}
+			
+			if(foundIndex == -1)
+				return;
+			
+			int selectedRow = wordTable.convertRowIndexToView(foundIndex);
+			Caption selectedCaption = foreignDocumentSubtitles.getCaptionAtTextPostion(start);
+			int referenceNumber;
+			
+			if(selectedCaption != null)
+				referenceNumber = wordTableModel.getCurrentWordList().get(foundIndex).getReferences().indexOf(selectedCaption);
+			else {
+				referenceNumber = 0;
+			}
 			
 			// scroll to word in wordTable
 			initialGoToReference = referenceNumber;
 			wordTable.setRowSelectionInterval(selectedRow, selectedRow);
 			wordTable.addColumnSelectionInterval(0, wordTableModel.getColumnCount() - 1);
-			initialGoToReference = 0;
+			initialGoToReference = -1;
 			
 			Rectangle cellRect = wordTable.getCellRect(selectedRow, 0, true);
 			
@@ -534,82 +650,6 @@ public class SubtitlesPanel extends JPanel {
 			vertical.setValue( vertical.getMaximum() );
 			
 			wordTable.scrollRectToVisible(cellRect);
-		}
-
-		@Override
-		public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-			int start;
-			int end;
-			
-			Highlight[] highlights = foreign_textpane.getHighlighter().getHighlights();
-			if(highlights.length != 0) {
-				Highlight highlight = highlights[0];
-				start = highlight.getStartOffset();
-				end = highlight.getEndOffset();
-			} else {
-				Point locationPoint = foreign_textpane.getMousePosition();
-				start = foreign_textpane.viewToModel2D(foreign_textpane.getMousePosition());
-				end = start;
-			}
-			
-			if(start == -1 || end == -1) {
-				selectedRow = -1;
-				return;
-			}
-			
-			for(;start > 0 && !Character.isWhitespace(foreignSubtitleString.charAt(start)); --start);
-			// remove the white space;
-			++start;
-			for(;end < foreignSubtitleString.length() - 1 && !Character.isWhitespace(foreignSubtitleString.charAt(end)); ++end);
-			
-			String selectedWord = foreignSubtitleString.substring(start, end + 1).toLowerCase();
-			selectedWord = wordFrequencyParser.preprocessWord(selectedWord);
-			
-			// search for word in Model
-			int foundIndex = -1;
-			for(int i = 0; i < wordTableModel.getRowCount(); ++i) {
-				if(wordTableModel.getValueAt(i, WordTableModel.WORD_COLUMN).equals(selectedWord)) {
-					foundIndex = i;
-					break;
-				}
-			}
-			
-			if(foundIndex == -1) {
-				selectMenuItem.setEnabled(false);
-				selectMenuItem.setText(String.format("Select", selectedWord));
-				selectedWord = null;
-				selectedRow = -1;
-			} else {
-				selectMenuItem.setEnabled(true);
-				selectMenuItem.setText(String.format("Select (%s)", selectedWord));
-				selectedRow = wordTable.convertRowIndexToView(foundIndex);
-				Caption selectedCaption = foreignDocumentSubtitles.getCaptionAtTextPostion(start);
-				if(selectedCaption != null)
-					referenceNumber = wordTableModel.getCurrentWordList().get(foundIndex).getReferences().indexOf(selectedCaption);
-				else {
-					referenceNumber = 0;
-				}
-			}
-		}
-
-		@Override
-		public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void popupMenuCanceled(PopupMenuEvent e) {
-			// TODO Auto-generated method stub
-			
-		}
-	}
-	
-	private class PrimarySubsPopup extends JPopupMenu
-	{
-		public PrimarySubsPopup()
-		{
-			
 		}
 	}
 }
