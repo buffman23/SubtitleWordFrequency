@@ -456,6 +456,9 @@ public class SubtitlesPanel extends JPanel {
 	{
 		try {
 			List<SerializableWord> wordData = Utils.deserialize(file, new TypeToken<List<SerializableWord>>() {}.getType());
+			if(wordData == null) {
+				return;
+			}
 			List<Word> wordList = wordTableModel.getWordList();
 			
 			for(SerializableWord importedWord : wordData) {
