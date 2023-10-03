@@ -5,13 +5,19 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class Word {
+public class Word implements Comparable<Word> {
 	private String value;
+	
 	private int count; // frequency
+	
 	private String definiton;
+	
 	private boolean hidden; // if user would like to hide word (b/c they already know it)
+	
 	private int selectedReferenceIndex;
+	
 	private List<Caption> references;
+	
 	private List<Word> associatedWords;
 	
 	public Word(String word)
@@ -150,5 +156,10 @@ public class Word {
 	public String toString()
 	{
 		return value;
+	}
+
+	@Override
+	public int compareTo(Word o) {
+		return value.compareTo(o.value);
 	}
 }

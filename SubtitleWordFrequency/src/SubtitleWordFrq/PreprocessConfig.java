@@ -1,5 +1,7 @@
 package SubtitleWordFrq;
 
+import java.io.IOException;
+import java.lang.System.Logger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,16 +15,25 @@ public class PreprocessConfig {
 	
 	public static PreprocessConfig load()
 	{
-		PreprocessConfig preprocessConfig = Utils.deserialize("preprocess.json", PreprocessConfig.class);
-		
-		if(preprocessConfig == null)
+		PreprocessConfig preprocessConfig;
+		try {
+			preprocessConfig = Utils.deserialize("preprocess.json", PreprocessConfig.class);
+		} catch (IOException e) {
+			Utils.logger.severe(e.getMessage());
+			//e.printStackTrace();
 			preprocessConfig = new PreprocessConfig();
+		}
 		
 		return preprocessConfig;
 	}
 	
 	public static void save(PreprocessConfig preprocessConfig)
 	{
-		Utils.serialize(preprocessConfig, "preprocess.json", PreprocessConfig.class);
+		try {
+			Utils.serialize(preprocessConfig, "preprocess.json", PreprocessConfig.class);
+		} catch (IOException e) {
+			Utils.logger.severe(e.getMessage());
+			//e.printStackTrace();
+		}
 	}
 }

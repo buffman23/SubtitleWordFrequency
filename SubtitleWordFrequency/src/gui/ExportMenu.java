@@ -2,6 +2,7 @@ package gui;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +16,11 @@ import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FileUtils;
 
+import com.google.gson.reflect.TypeToken;
+
+import SubtitleWordFrq.SerializableWord;
 import SubtitleWordFrq.Utils;
+import SubtitleWordFrq.Word;
 
 public class ExportMenu extends JMenu
 {
@@ -39,33 +44,14 @@ public class ExportMenu extends JMenu
 		exportCSVMenu.add(exportCSVSelectedMenuItem);
 		this.add(exportCSVMenu);
 		
-		exportHiddenWordListMenuItem = new JMenuItem("Hidden Word List");
-		exportHiddenWordListMenuItem.addActionListener(e -> exportHiddenWordListClicked());
-		
-		this.add(exportHiddenWordListMenuItem);
+		JMenuItem exportWordDataMenuItem = new JMenuItem("Definitions and Hidden");
+		exportWordDataMenuItem.addActionListener(e -> exportWordDataClicked());
+		add(exportWordDataMenuItem);
 	}
 	
 	private void exportCSVClicked(boolean exportAll)
 	{
-		JFileChooser chooser = new JFileChooser();
-		chooser.setCurrentDirectory(new File("."));
-		
-		FileFilter csvFilter = new FileFilter() {
-		   public String getDescription() {
-		       return "Comma Separated Values (*.csv)";
-		   }
-
-		   public boolean accept(File f) {
-		       if (f.isDirectory()) {
-		           return true;
-		       } else {
-		           String filename = f.getName().toLowerCase();
-		           return filename.endsWith(".csv");
-		       }
-		   }
-		};
-		
-		chooser.setFileFilter(csvFilter);
+		JFileChooser chooser = Utils.fileChooser("Comma Separated Values (*.csv)", ".csv");
 		
 		if(chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
 		{
@@ -81,7 +67,7 @@ public class ExportMenu extends JMenu
 		try {
 			Utils.TableToCSV(table, exportAll, selectedFile);
 			
-			JOptionPane.showMessageDialog(null, "Exported to " + selectedFile.getName(), "Successful CSV Export", JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Exported to " + selectedFile.getName(), "Successful CSV export", JOptionPane.INFORMATION_MESSAGE);
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(null, e.getMessage(), "Failed CSV Export", JOptionPane.ERROR_MESSAGE);
 			Utils.logger.severe(e.getMessage());
@@ -89,27 +75,9 @@ public class ExportMenu extends JMenu
 		}
 	}
 	
-	private void exportHiddenWordListClicked()
+	private void exportWordDataClicked()
 	{
-		JFileChooser chooser = new JFileChooser();
-		chooser.setCurrentDirectory(new File("."));
-		
-		FileFilter csvFilter = new FileFilter() {
-		   public String getDescription() {
-		       return "Plain Text (*.txt)";
-		   }
-
-		   public boolean accept(File f) {
-		       if (f.isDirectory()) {
-		           return true;
-		       } else {
-		           String filename = f.getName().toLowerCase();
-		           return filename.endsWith(".txt");
-		       }
-		   }
-		};
-		
-		chooser.setFileFilter(csvFilter);
+		JFileChooser chooser = Utils.fileChooser("JavaScript Object Notation (*.json)", ".json");
 		
 		if(chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
 		{
@@ -118,22 +86,20 @@ public class ExportMenu extends JMenu
 		
 		File selectedFile = chooser.getSelectedFile();
 		
-		if(selectedFile.exists()) {
-			
+		// add .json extension if missing
+		if(!selectedFile.getName().toLowerCase().endsWith(".json")) {
+			selectedFile = new File(selectedFile.getAbsolutePath() + ".json");
 		}
 		
 		WordTableModel wordTableModel = (WordTableModel)table.getModel();
-		List<String> hiddenWordList = wordTableModel.getWordList().stream()
-				.filter(word -> word.isHidden())
-				.map(word -> word.toString()).collect(Collectors.toList());
+		List<SerializableWord> wordList = wordTableModel.getSerializableWords();
 		
 		try {
-			
-			FileUtils.writeLines(selectedFile, "UTF-8", hiddenWordList);
-			JOptionPane.showMessageDialog(null, "Exported to " + selectedFile.getName(), "Successful CSV Export", JOptionPane.INFORMATION_MESSAGE);
+			Utils.serialize(wordList, selectedFile, new TypeToken<List<SerializableWord>>(){}.getType());
+			JOptionPane.showMessageDialog(null, "Exported to " + selectedFile.getName(), "Successful words export", JOptionPane.INFORMATION_MESSAGE);
 		} catch (IOException e) {
 			Utils.logger.severe(e.getMessage());
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Failed Hidden Word List Export", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Failed words export", JOptionPane.INFORMATION_MESSAGE);
 			//e.printStackTrace();
 		}
 	}

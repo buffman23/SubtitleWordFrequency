@@ -1,10 +1,18 @@
 package SubtitleWordFrq;
 import java.io.*;
+import java.lang.reflect.Type;
+import java.nio.charset.Charset;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import javax.swing.JFileChooser;
 import javax.swing.JTable;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableModel;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
 import com.google.gson.Gson;
@@ -15,30 +23,69 @@ public class Utils {
 	public static final Logger logger = Logger.getLogger(Utils.class.getName());
 	public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 	
-	public static<T> T deserialize(String filepath, Class<T> clazz)
+	public static<T> T deserialize(String filepath, Type type) throws IOException
 	{
-		File file = new File(filepath);
+		return deserialize(new File(filepath), type);
+	}
+	
+	public static<T> T deserialize(File file, Type type) throws IOException
+	{
 		if(file.exists()) {
 			try(FileReader fr = new FileReader(file)){
-				return gson.fromJson(fr, clazz);
-			} catch (IOException e) {
-				logger.severe(e.getMessage());
+				return gson.fromJson(fr, type);
 			}
 		} else {
-			logger.severe(String.format("Failed to deserialize file. File does not exist %s", filepath));
+			logger.severe(String.format("Failed to deserialize file. File does not exist %s", file.getAbsolutePath()));
 		}
 		
 		return null;
 	}
 	
-	public static<T> void serialize(T object, String filepath, Class<T> clazz)
+	public static<T> void serialize(T object, String filepath, Type type) throws IOException
 	{
-		File file = new File(filepath);
-
+		serialize(object, new File(filepath), type);
+	}
+	
+	public static<T> void serialize(T object, File file, Type type) throws IOException
+	{
 		try(FileWriter fr = new FileWriter(file)){
-			gson.toJson(object, clazz, fr);
-		} catch (IOException e) {
-			logger.severe(e.getMessage());
+			gson.toJson(object, type, fr);
+		}
+	}
+	
+	public static List<List<String>> loadCSV(File csvFile)
+	{
+		return null;
+	}
+	
+	public static void saveCSV(File csvFile, List<List<String>> csvData) throws FileNotFoundException
+	{
+		try(PrintWriter pw = new PrintWriter(csvFile))
+		{
+			pw.print(csvData.stream()
+				.map(csvEntry -> csvEntry.stream().collect(Collectors.joining(",")))
+				.collect(Collectors.joining("\n"))
+			);
+		}
+	}
+	
+	/**
+	 * Loads a plain text file with values delimited by newline.
+	 * 
+	 * @param plain text file
+	 * @return lines of the plain text file
+	 * @throws IOException 
+	 */
+	public static List<String> loadPlainText(File file) throws IOException
+	{
+		return FileUtils.readLines(file, Charset.forName("UTF-8"));
+	}
+	
+	public static void savePlainText(File file, List<String> data) throws FileNotFoundException
+	{
+		try(PrintWriter pw = new PrintWriter(file))
+		{
+			pw.print(data.stream().collect(Collectors.joining("\n")));
 		}
 	}
 	
@@ -95,5 +142,36 @@ public class Utils {
 				}
 			}
 		}
+	}
+	
+	public static JFileChooser fileChooser(String description, String fileExtension)
+	{
+		return fileChooser(description, fileExtension, false);
+	}
+	
+	public static JFileChooser fileChooser(String description, String fileExtension, boolean multiselect)
+	{
+		JFileChooser chooser = new JFileChooser();
+		chooser.setMultiSelectionEnabled(multiselect);
+		chooser.setCurrentDirectory(new File("."));
+		
+		FileFilter csvFilter = new FileFilter() {
+		   public String getDescription() {
+		       return description;
+		   }
+
+		   public boolean accept(File f) {
+		       if (f.isDirectory()) {
+		           return true;
+		       } else {
+		           String filename = f.getName().toLowerCase();
+		           return filename.endsWith(fileExtension);
+		       }
+		   }
+		};
+		
+		chooser.setFileFilter(csvFilter);
+		
+		return chooser;
 	}
 }

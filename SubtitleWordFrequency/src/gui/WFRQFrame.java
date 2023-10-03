@@ -1,9 +1,10 @@
 package gui;
 
 import javax.swing.JFrame;
-import javax.swing.JTabbedPane;
 import java.awt.BorderLayout;
-import javax.swing.ImageIcon;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+
 import javax.swing.JFileChooser;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -12,11 +13,19 @@ import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
+import com.google.gson.reflect.TypeToken;
+
 import java.io.File;
 import java.io.IOException;
-import SubtitleWordFrq.Utils;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-public class WFRQFrame extends JFrame {
+import SubtitleWordFrq.SerializableWord;
+import SubtitleWordFrq.Utils;
+import SubtitleWordFrq.Word;
+
+public class WFRQFrame extends JFrame implements WindowListener {
 	private SubtitlesPanel subtitles_panel;
 
 	private JMenuItem close_subtitles_menuitem;
@@ -25,7 +34,10 @@ public class WFRQFrame extends JFrame {
 
 	private JMenu export_menu;
 	
+	private final File sessionFile = new File("session.json");
+	
 	public WFRQFrame() {
+		addWindowListener(this);
 		subtitles_panel = new SubtitlesPanel();
 		getContentPane().add(subtitles_panel, BorderLayout.CENTER);
 		
@@ -47,11 +59,9 @@ public class WFRQFrame extends JFrame {
 		JMenu importMenu = new JMenu("Import");
 		file_menu.add(importMenu);
 		
-		JMenuItem importDefinitionsMenuItem = new JMenuItem("Definitions");
-		importMenu.add(importDefinitionsMenuItem);
-		
-		JMenuItem importHiddenWordListMenuItem = new JMenuItem("Hidden Word List");
-		importMenu.add(importHiddenWordListMenuItem);
+		JMenuItem importWordDataMenuItem = new JMenuItem("Word Data");
+		importWordDataMenuItem.addActionListener(e -> importWordDataClicked());
+		importMenu.add(importWordDataMenuItem);
 		
 		export_menu = new ExportMenu(subtitles_panel.getWordTable(), false);
 		export_menu.setEnabled(false);
@@ -79,6 +89,7 @@ public class WFRQFrame extends JFrame {
 			
 			try {
 				subtitles_panel.loadSubtitles(foreignLangFile, primaryLangFile);
+				subtitles_panel.importWordData(sessionFile);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -90,28 +101,21 @@ public class WFRQFrame extends JFrame {
 		}
 	}
 	
+	private void importWordDataClicked()
+	{
+		JFileChooser chooser = Utils.fileChooser("JavaScript Object Notation (*.json)", ".json");
+		
+		if(chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
+		{
+			return;
+		}
+		
+		subtitles_panel.importWordData(chooser.getSelectedFile());
+	}
+	
 	private void openClicked()
 	{
-		JFileChooser chooser = new JFileChooser();
-		chooser.setCurrentDirectory(new File("."));
-		chooser.setMultiSelectionEnabled(true);
-		
-		FileFilter srtFilter = new FileFilter() {
-		   public String getDescription() {
-		       return "Subtitles (*.srt)";
-		   }
-
-		   public boolean accept(File f) {
-		       if (f.isDirectory()) {
-		           return true;
-		       } else {
-		           String filename = f.getName().toLowerCase();
-		           return filename.endsWith(".srt");
-		       }
-		   }
-		};
-		
-		chooser.setFileFilter(srtFilter);
+		JFileChooser chooser = Utils.fileChooser("Subtitles (*.srt)", ".srt", true);
 		
 		if(chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
 		{
@@ -145,6 +149,7 @@ public class WFRQFrame extends JFrame {
 		
 		try {
 			subtitles_panel.loadSubtitles(foreignLangFile, primaryLangFile);
+			subtitles_panel.importWordData(sessionFile);
 		} catch (IOException e) {
 			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
@@ -157,6 +162,7 @@ public class WFRQFrame extends JFrame {
 	
 	private void closeClicked()
 	{
+		subtitles_panel.exportWordData(sessionFile);
 		subtitles_panel.unloadSubtitles();
 		open_subtitles_menuitem.setEnabled(true);
 		close_subtitles_menuitem.setEnabled(false);
@@ -175,9 +181,49 @@ public class WFRQFrame extends JFrame {
 	    }
 		
 		WFRQFrame frame = new WFRQFrame();
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		frame.setSize(1183, 739);
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 	}
+
+	@Override
+	public void windowOpened(WindowEvent e) {}
+
+	@Override
+	public void windowClosing(WindowEvent e) {
+		// check if subtitles are open right now
+		if(close_subtitles_menuitem.isEnabled()) {
+			int response = JOptionPane.showConfirmDialog(
+				this, 
+				"Would you like to save definitions and hidden word list?", 
+				"Save session", 
+				JOptionPane.YES_NO_CANCEL_OPTION
+			);
+			
+			if(response != JOptionPane.CANCEL_OPTION) {
+				if(response == JOptionPane.YES_OPTION) {
+					subtitles_panel.exportWordData(sessionFile);
+				}
+				this.dispose();
+			}
+		} else {
+			this.dispose();
+		}
+	}
+
+	@Override
+	public void windowClosed(WindowEvent e) {}
+
+	@Override
+	public void windowIconified(WindowEvent e) {}
+
+	@Override
+	public void windowDeiconified(WindowEvent e) {}
+
+	@Override
+	public void windowActivated(WindowEvent e) {}
+
+	@Override
+	public void windowDeactivated(WindowEvent e) {}
 }

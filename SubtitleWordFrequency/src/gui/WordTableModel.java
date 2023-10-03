@@ -6,8 +6,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.swing.table.AbstractTableModel;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import SubtitleWordFrq.Caption;
 import SubtitleWordFrq.DocumentSubtitles;
+import SubtitleWordFrq.SerializableWord;
 import SubtitleWordFrq.Word;
 
 public class WordTableModel extends AbstractTableModel {
@@ -69,6 +73,8 @@ public class WordTableModel extends AbstractTableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
+		if(wordFrequencyList == null)
+			return null;
 		
 		Word word;
 		if(hiddenColumnEnabled) {
@@ -89,10 +95,11 @@ public class WordTableModel extends AbstractTableModel {
 				return word.getSelectedReference().text;
 			case PRIMARY_EXAMPLE:
 				Caption selectedReference = word.getSelectedReference();
-				if(documentSubtitles.getPairedCaptions(selectedReference).stream()
+				List<ImmutablePair<Caption, Integer>> pairedCaptions = documentSubtitles.getPairedCaptions(selectedReference);
+				if(pairedCaptions == null ||  pairedCaptions.stream()
 						.anyMatch(pair -> pair.right == DocumentSubtitles.NO_MATCH))
 					return "";
-				return documentSubtitles.getPairedCaptions(selectedReference).stream()
+				return pairedCaptions.stream()
 						.map(pair -> pair.left)
 						.map(caption -> caption.text.toString().replace("\n", " "))
 						.collect(Collectors.joining(" "));
@@ -107,6 +114,9 @@ public class WordTableModel extends AbstractTableModel {
 	@Override
 	public void setValueAt(Object value, int rowIndex, int columnIndex)
 	{
+		if(wordFrequencyList == null)
+			return;
+		
 		if(columnIndex == HIDDEN_COLUMN)
 			getCurrentWordList().get(rowIndex).setHidden((Boolean)value);
 		
@@ -151,7 +161,19 @@ public class WordTableModel extends AbstractTableModel {
 		fireTableStructureChanged();
 	}
 	
-	private void validateNotHiddenList()
+	public List<SerializableWord> getSerializableWords()
+	{
+		if(wordFrequencyList == null)
+			return List.of();
+		
+		return wordFrequencyList.stream()
+			.filter(word -> word.isHidden() || word.getDefiniton().length() > 0 || 
+					(word.getAssociatedWords() != null && word.getAssociatedWords().size() != 0))
+			.map(word -> new SerializableWord(word))
+			.collect(Collectors.toList());
+	}
+	
+	public void validateNotHiddenList()
 	{
 		if(wordFrequencyList == null)
 		{

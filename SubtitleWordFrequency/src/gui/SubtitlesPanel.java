@@ -23,8 +23,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
+import com.google.gson.reflect.TypeToken;
+
 import SubtitleWordFrq.Caption;
 import SubtitleWordFrq.DocumentSubtitles;
+import SubtitleWordFrq.SerializableWord;
 import SubtitleWordFrq.Utils;
 import SubtitleWordFrq.Word;
 import SubtitleWordFrq.WordFrequencyParser;
@@ -38,9 +41,11 @@ import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
@@ -404,6 +409,7 @@ public class SubtitlesPanel extends JPanel {
 		
 		wordFrequencyParser = new WordFrequencyParser();
 		List<Word> wordList = wordFrequencyParser.createWordFrequencyList(foreignSubtitleString, foreignDocumentSubtitles);
+		wordList.sort(Word::compareTo);
 		wordTableModel.setData(wordList, foreignDocumentSubtitles);
 		rebuildSorter();
 		
@@ -434,6 +440,45 @@ public class SubtitlesPanel extends JPanel {
 		updateTableInfoText();
 	}
 	
+	public void exportWordData(File file)
+	{
+		try {
+			Type listType = new TypeToken<List<SerializableWord>>() {}.getType();
+			List<SerializableWord> tableWordData = wordTableModel.getSerializableWords();
+			Utils.serialize(tableWordData, file, listType);
+		} catch (IOException e) {
+			Utils.logger.severe(e.getMessage());
+			//e.printStackTrace();
+		}
+	}
+	
+	public void importWordData(File file)
+	{
+		try {
+			List<SerializableWord> wordData = Utils.deserialize(file, new TypeToken<List<SerializableWord>>() {}.getType());
+			List<Word> wordList = wordTableModel.getWordList();
+			
+			for(SerializableWord importedWord : wordData) {
+				int index = Collections.binarySearch(wordList, importedWord, 
+						(word, serializableWord) -> word.toString().compareToIgnoreCase(serializableWord.toString()));
+				
+				if(index > 0) {
+					Word word = wordList.get(index);
+					if(importedWord.hidden != null)
+						word.setHidden(importedWord.hidden);
+					if(importedWord.definition != null)
+						word.setDefiniton(importedWord.definition);
+					//word.setAssociatedWords(importedWord.associatedWords);
+				}
+			}
+			wordTableModel.validateNotHiddenList();
+			wordTableModel.fireTableDataChanged();
+		} catch (IOException e) {
+			Utils.logger.severe(e.getMessage());
+			//e.printStackTrace();
+		}
+	}
+	
 	private void rebuildSorter()
 	{
 		sorter = new TableRowSorter<>(wordTableModel);
@@ -448,7 +493,6 @@ public class SubtitlesPanel extends JPanel {
 	
 	private void updateReferenceNavText()
 	{
-		
 		int totalReferences = selectedWord != null ? selectedWord.getReferences().size() : 0;
 			
 		String text = String.format("%s(%d/%d)", selectedWord, currentGoToReference + 1, totalReferences);
