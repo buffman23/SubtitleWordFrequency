@@ -44,6 +44,15 @@ public class WFRQFrame extends JFrame {
 		close_subtitles_menuitem.addActionListener(e -> closeClicked());
 		file_menu.add(close_subtitles_menuitem);
 		
+		JMenu importMenu = new JMenu("Import");
+		file_menu.add(importMenu);
+		
+		JMenuItem importDefinitionsMenuItem = new JMenuItem("Definitions");
+		importMenu.add(importDefinitionsMenuItem);
+		
+		JMenuItem importHiddenWordListMenuItem = new JMenuItem("Hidden Word List");
+		importMenu.add(importHiddenWordListMenuItem);
+		
 		export_menu = new ExportMenu(subtitles_panel.getWordTable(), false);
 		export_menu.setEnabled(false);
 		file_menu.add(export_menu);

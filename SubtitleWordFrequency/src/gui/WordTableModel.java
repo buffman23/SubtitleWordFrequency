@@ -94,7 +94,7 @@ public class WordTableModel extends AbstractTableModel {
 					return "";
 				return documentSubtitles.getPairedCaptions(selectedReference).stream()
 						.map(pair -> pair.left)
-						.map(caption -> caption.text)
+						.map(caption -> caption.text.toString().replace("\n", " "))
 						.collect(Collectors.joining(" "));
 						//TODO make joining string configurable
 			case HIDDEN_COLUMN:

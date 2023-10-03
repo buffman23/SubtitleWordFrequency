@@ -39,7 +39,7 @@ public class WordFrequencyParser {
 		//private static final String DEFAULT_STRIP_STRING = "[" + Pattern.quote("[]{}<>,./?;:'\"\\|-=_+!@#$%^&*()~` …") + "]";
 		for(Entry<String, String> entry : preprocessConfig.replaceMap.entrySet()) {
 			String key = "[" + Pattern.quote(entry.getKey()) + "]";
-			content = content.replaceAll(key,  entry.getValue());
+			content = content.replaceAll(key, entry.getValue());
 		}
 		
 		

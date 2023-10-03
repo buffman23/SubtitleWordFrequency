@@ -61,19 +61,20 @@ public class Utils {
 			selectedRows = IntStream.of(table.getSelectedRows());
 		
 		int[] columnIndexTable = new int[columnCount];
-		for(int i = 0; i < columnCount - 1; ++i) {
+		for(int i = 0; i < columnCount; ++i) {
 			columnIndexTable[i] = table.convertColumnIndexToModel(i); 
 		}
 		
 		try(PrintWriter pw = new PrintWriter(outFile))
 		{
 			// print column headers
-			for(int i = 0; i < columnCount - 1; ++i) {
-				pw.print(tableModel.getColumnName(columnIndexTable[i]));
-				pw.print(',');
-			}
+			//for(int i = 0; i < columnCount - 1; ++i) {
+			//	pw.print(tableModel.getColumnName(columnIndexTable[i]));
+			//	pw.print(',');
+			//}
+			
 			// print last value separately avoid extra comma
-			pw.println(tableModel.getColumnName(columnCount - 1));
+			//pw.println(tableModel.getColumnName(columnCount - 1));
 			
 			int[] rows = selectedRows.toArray();
 			for(int i = 0; i < rows.length; ++i) {
@@ -83,13 +84,14 @@ public class Utils {
 					pw.print(escapedValue);
 					pw.print(',');
 				}
+				
 				// print last value separately avoid extra comma
+				String escapedValue = StringEscapeUtils.escapeCsv(tableModel.getValueAt(rowIndex, columnIndexTable[columnCount - 1]).toString());
 				if(i == rows.length - 1) {
 					// don't add newline for last line in csv file
-					pw.print(tableModel.getValueAt(i, columnCount - 1));
+					pw.print(escapedValue);
 				} else {
-					pw.println(tableModel.getValueAt(i, columnCount - 1));
-
+					pw.println(escapedValue);
 				}
 			}
 		}
