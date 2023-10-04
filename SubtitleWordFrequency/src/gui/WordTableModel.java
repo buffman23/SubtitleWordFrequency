@@ -1,5 +1,6 @@
 package gui;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -16,11 +17,11 @@ import SubtitleWordFrq.Word;
 
 public class WordTableModel extends AbstractTableModel {
 
-	public static final int WORD_COLUMN = 0,  DEFINITION_COLUMN = 1, COUNT_COLUMN = 2,
-			FOREIGN_EXAMPLE = 3, PRIMARY_EXAMPLE = 4, HIDDEN_COLUMN = 5;
-	private static final String[] COLUMN_NAMES = new String[] { "Word", "Definition", "Count", "Foreign Example", "Primary Example", "Hidden" };
+	public static final int WORD_COLUMN = 0,  DEFINITION_COLUMN = 1, TAGS_COLUMN = 2, COUNT_COLUMN = 3,
+			FOREIGN_EXAMPLE = 4, PRIMARY_EXAMPLE = 5, HIDDEN_COLUMN = 6;
+	private static final String[] COLUMN_NAMES = new String[] { "Word", "Definition", "Tags", "Count", "Foreign Example", "Primary Example", "Hidden" };
 	private static final Class<?>[] COLUMN_CLASSES = new Class<?>[] { 
-		Word.class, String.class, Integer.class, String.class, String.class, Boolean.class
+		Word.class, String.class, String.class,Integer.class, String.class, String.class, Boolean.class
 	};
 	private List<Word> wordFrequencyList;
 	private List<Word> notHiddenList;
@@ -37,7 +38,7 @@ public class WordTableModel extends AbstractTableModel {
 	@Override
 	public boolean isCellEditable(int rowIndex, int columnIndex)
 	{
-		if(columnIndex == HIDDEN_COLUMN || columnIndex == DEFINITION_COLUMN)
+		if(columnIndex == HIDDEN_COLUMN || columnIndex == DEFINITION_COLUMN || columnIndex == TAGS_COLUMN)
 			return true;
 		
 		return false;
@@ -68,7 +69,7 @@ public class WordTableModel extends AbstractTableModel {
 
 	@Override
 	public int getColumnCount() {
-		return 5 + (hiddenColumnEnabled ? 1 : 0);
+		return 6 + (hiddenColumnEnabled ? 1 : 0);
 	}
 
 	@Override
@@ -89,6 +90,10 @@ public class WordTableModel extends AbstractTableModel {
 				return word;
 			case DEFINITION_COLUMN:
 				return word.getDefiniton();
+			case TAGS_COLUMN:
+				if(word.getTags() == null)
+					return "";
+				return word.getTags().stream().collect(Collectors.joining(","));
 			case COUNT_COLUMN:
 				return word.getCount();
 			case FOREIGN_EXAMPLE:
@@ -122,6 +127,11 @@ public class WordTableModel extends AbstractTableModel {
 		
 		if(columnIndex == DEFINITION_COLUMN)
 			getCurrentWordList().get(rowIndex).setDefiniton(value.toString());
+		
+		if(columnIndex == TAGS_COLUMN) {
+			
+			getCurrentWordList().get(rowIndex).setTags(Arrays.asList(value.toString().replace(" ", "").split(",")));
+		}
 	}
 	
 	public List<Word> getWordList() {
@@ -168,7 +178,8 @@ public class WordTableModel extends AbstractTableModel {
 		
 		return wordFrequencyList.stream()
 			.filter(word -> word.isHidden() || word.getDefiniton().length() > 0 || 
-					(word.getAssociatedWords() != null && word.getAssociatedWords().size() != 0))
+					(word.getAssociatedWords() != null && word.getAssociatedWords().size() != 0) ||
+					word.getTags() != null && word.getTags().size() > 0)
 			.map(word -> new SerializableWord(word))
 			.collect(Collectors.toList());
 	}

@@ -12,6 +12,8 @@ public class Word implements Comparable<Word> {
 	
 	private String definiton;
 	
+	private List<String> tags; 
+	
 	private boolean hidden; // if user would like to hide word (b/c they already know it)
 	
 	private int selectedReferenceIndex;
@@ -108,6 +110,14 @@ public class Word implements Comparable<Word> {
 		this.associatedWords = associatedWords;
 	}
 	
+	public List<String> getTags() {
+		return tags;
+	}
+
+	public void setTags(List<String> tags) {
+		this.tags = tags;
+	}
+
 	public boolean isHidden() {
 		return hidden;
 	}
@@ -143,6 +153,11 @@ public class Word implements Comparable<Word> {
 
 	public void setDefiniton(String definiton) {
 		this.definiton = definiton;
+	}
+	
+	public boolean isCapitalized()
+	{
+		return Character.isUpperCase(value.charAt(0)); 
 	}
 	
 	public void setCapitalized(boolean capitalized) {

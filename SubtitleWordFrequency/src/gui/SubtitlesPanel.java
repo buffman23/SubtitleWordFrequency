@@ -18,9 +18,7 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.output.ThresholdingOutputStream;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.WordUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import com.google.gson.reflect.TypeToken;
@@ -106,6 +104,7 @@ public class SubtitlesPanel extends JPanel {
 	private JLabel table_info_label;
 	private WordFrequencyParser wordFrequencyParser;
 	private JScrollPane scrollPane_table;
+	private DefaultTableCellRenderer leftRenderer;
 	
 	public SubtitlesPanel() {
 		setLayout(new BorderLayout(0, 0));
@@ -128,7 +127,7 @@ public class SubtitlesPanel extends JPanel {
 		wordTableModel = new WordTableModel(null, null);
 		
 		
-		DefaultTableCellRenderer leftRenderer = new DefaultTableCellRenderer();
+		leftRenderer = new DefaultTableCellRenderer();
 		leftRenderer.setHorizontalAlignment(JLabel.LEFT);
 		
 		scrollPane_table = new JScrollPane();
@@ -478,6 +477,10 @@ public class SubtitlesPanel extends JPanel {
 						word.setHidden(importedWord.hidden);
 					if(importedWord.definition != null)
 						word.setDefiniton(importedWord.definition);
+					if(importedWord.tags != null) 
+						word.setTags(importedWord.tags);
+					if(importedWord.isCapitalized())
+						word.setCapitalized(true);
 					//word.setAssociatedWords(importedWord.associatedWords);
 				}
 			}
@@ -495,10 +498,15 @@ public class SubtitlesPanel extends JPanel {
 		ArrayList<RowSorter.SortKey> list = new ArrayList<>();
 		list.add(new RowSorter.SortKey(WordTableModel.COUNT_COLUMN, SortOrder.DESCENDING));
 		list.add(new RowSorter.SortKey(WordTableModel.WORD_COLUMN, SortOrder.ASCENDING));
-		if(wordTableModel.getColumnCount() == 6)
+		if(wordTableModel.getColumnCount() == 7)
 			list.add(new RowSorter.SortKey(WordTableModel.HIDDEN_COLUMN, SortOrder.ASCENDING));
 		sorter.setSortKeys(list);
+		sorter.setSortable(WordTableModel.FOREIGN_EXAMPLE, false);
+		sorter.setSortable(WordTableModel.PRIMARY_EXAMPLE, false);
+		sorter.setSortable(WordTableModel.TAGS_COLUMN, false);
+		//sorter.setComparator(WordTableModel.WORD_COLUMN, (w1, w2) -> w1.toString().compareToIgnoreCase(w2.toString()));
 		wordTable.setRowSorter(sorter);	
+		wordTable.getColumnModel().getColumn(WordTableModel.COUNT_COLUMN).setCellRenderer(leftRenderer);
 	}
 	
 	private void updateReferenceNavText()
