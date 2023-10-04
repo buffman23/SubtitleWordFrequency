@@ -13,6 +13,9 @@
 # target folder
 SubtitleWordFrequency/target/
 
+# data folder
+data/
+
 # Package Files #
 *.jar
 *.war

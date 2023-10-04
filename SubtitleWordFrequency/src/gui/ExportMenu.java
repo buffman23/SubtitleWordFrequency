@@ -44,7 +44,8 @@ public class ExportMenu extends JMenu
 		exportCSVMenu.add(exportCSVSelectedMenuItem);
 		this.add(exportCSVMenu);
 		
-		JMenuItem exportWordDataMenuItem = new JMenuItem("Definitions and Hidden");
+		JMenuItem exportWordDataMenuItem = new JMenuItem("Table data");
+		exportWordDataMenuItem.setToolTipText("Export editable table data (definitions, tags, hidden)");
 		exportWordDataMenuItem.addActionListener(e -> exportWordDataClicked());
 		add(exportWordDataMenuItem);
 	}

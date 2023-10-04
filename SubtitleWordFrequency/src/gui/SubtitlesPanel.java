@@ -83,6 +83,7 @@ public class SubtitlesPanel extends JPanel {
 	    StyleConstants.setBackground(NO_HIGHLIGHT, new Color(0, 0, 0, 0));
 	}
 	
+	private boolean loaded;
 	private String foreignSubtitleString;
 	private String primarySubtitleString;
 	
@@ -422,8 +423,13 @@ public class SubtitlesPanel extends JPanel {
 			foreignDocumentSubtitles.pairWith(primaryDocumentSubtitles);
 		}
 		
+		// scroll to top of scroll panes
+		foreign_textpane.setCaretPosition(0);
+		primary_textpane.setCaretPosition(0);
+		
 		toggleHidenButton.setEnabled(true);
 		updateTableInfoText();
+		loaded = true;
 	}
 	
 	public void unloadSubtitles()
@@ -438,6 +444,7 @@ public class SubtitlesPanel extends JPanel {
 		setReferenceNavEnabled(false);
 		toggleHidenButton.setEnabled(false);
 		updateTableInfoText();
+		loaded = false;
 	}
 	
 	public void exportWordData(File file)
@@ -527,6 +534,14 @@ public class SubtitlesPanel extends JPanel {
 		}
 	}
 	
+	public boolean isLoaded() {
+		return loaded;
+	}
+
+	public void setLoaded(boolean loaded) {
+		this.loaded = loaded;
+	}
+
 	private class TablePopup extends JPopupMenu implements PopupMenuListener
 	{
 		JMenuItem capitalizeMenu;
