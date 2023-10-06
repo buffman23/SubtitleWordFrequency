@@ -6,7 +6,6 @@ import javax.swing.JScrollBar;
 import javax.swing.JTable;
 import java.awt.BorderLayout;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JButton;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -45,6 +44,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
@@ -87,7 +87,7 @@ public class SubtitlesPanel extends JPanel {
 	
 	private SubtitleTextPane foreign_textpane;
 	private SubtitleTextPane primary_textpane;
-	private JTable wordTable;
+	private WordTable wordTable;
 	private TableRowSorter<WordTableModel> sorter;
 	private WordTableModel wordTableModel;
 	private Word selectedWord;
@@ -136,17 +136,13 @@ public class SubtitlesPanel extends JPanel {
 		gbc_scrollPane.gridx = 0;
 		gbc_scrollPane.gridy = 0;
 		table_panel.add(scrollPane_table, gbc_scrollPane);
-		wordTable = new JTable();
+		wordTable = new WordTable();
 		wordTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		wordTable.setFillsViewportHeight(true);
 		wordTable.setCellSelectionEnabled(true);
 		wordTable.getSelectionModel().addListSelectionListener(e -> wordTableRowSelected(e));
-		wordTable.setComponentPopupMenu(new TablePopup());
 		scrollPane_table.setViewportView(wordTable);
 		wordTable.setModel(wordTableModel);
-		wordTable.getColumnModel().getColumn(WordTableModel.WORD_COLUMN).setCellRenderer(leftRenderer);
-		wordTable.getColumnModel().getColumn(WordTableModel.DEFINITION_COLUMN).setCellRenderer(leftRenderer);
-		wordTable.getColumnModel().getColumn(WordTableModel.COUNT_COLUMN).setCellRenderer(leftRenderer);
 		JPanel sub_view_panel = new JPanel();
 		splitPane_1.setRightComponent(sub_view_panel);
 		sub_view_panel.setLayout(new GridLayout(0, 2, 0, 0));
@@ -410,7 +406,7 @@ public class SubtitlesPanel extends JPanel {
 		wordFrequencyParser = new WordFrequencyParser();
 		List<Word> wordList = wordFrequencyParser.createWordFrequencyList(foreignSubtitleString, foreignDocumentSubtitles);
 		wordList.sort(Word::compareTo);
-		wordTableModel.setData(wordList, foreignDocumentSubtitles);
+		wordTableModel.setWordList(wordList, foreignDocumentSubtitles);
 		rebuildSorter();
 		
 		if(primaryLangFile != null) {
@@ -428,13 +424,14 @@ public class SubtitlesPanel extends JPanel {
 		
 		toggleHidenButton.setEnabled(true);
 		updateTableInfoText();
+		Utils.updateRowHeight(wordTable, 0);
 		loaded = true;
 	}
 	
 	public void unloadSubtitles()
 	{
 		wordTable.setRowSorter(null);
-		wordTableModel.setData(null, null);
+		wordTableModel.setWordList(null, null);
 		foreign_textpane.setText("");
 		foreign_textpane.setDocumentSubtitles(null);
 		primary_textpane.setText("");
@@ -461,31 +458,45 @@ public class SubtitlesPanel extends JPanel {
 	public void importWordData(File file)
 	{
 		try {
-			List<SerializableWord> wordData = Utils.deserialize(file, new TypeToken<List<SerializableWord>>() {}.getType());
-			if(wordData == null) {
+			List<SerializableWord> importedWordData = Utils.deserialize(file, new TypeToken<List<SerializableWord>>() {}.getType());
+			if(importedWordData == null) {
 				return;
 			}
-			List<Word> wordList = wordTableModel.getWordList();
+			List<Word> newWordList = new ArrayList<>(wordTableModel.getWordList());
 			
-			for(SerializableWord importedWord : wordData) {
-				int index = Collections.binarySearch(wordList, importedWord, 
-						(word, serializableWord) -> word.toString().compareToIgnoreCase(serializableWord.toString()));
-				
-				if(index > 0) {
-					Word word = wordList.get(index);
-					if(importedWord.hidden != null)
-						word.setHidden(importedWord.hidden);
-					if(importedWord.definition != null)
-						word.setDefiniton(importedWord.definition);
-					if(importedWord.tags != null) 
-						word.setTags(importedWord.tags);
-					if(importedWord.isCapitalized())
-						word.setCapitalized(true);
-					//word.setAssociatedWords(importedWord.associatedWords);
+			for(SerializableWord importedWord : importedWordData) {
+				if(importedWord.isGroup()) {
+					List<Word> assocWords = importedWord.associatedWords.stream()
+							.map(str -> new Word(str))
+							.map(pseudoWord -> {
+								int idx = Collections.binarySearch(newWordList, pseudoWord);
+								return newWordList.get(idx);
+							})
+							.collect(Collectors.toList());
+					Word group = new Word(importedWord.toString(), assocWords);
+					newWordList.removeAll(assocWords);
+					newWordList.add(group);
+				} else {
+					int index = Collections.binarySearch(newWordList, importedWord, 
+							(word, serializableWord) -> word.toString().compareToIgnoreCase(serializableWord.toString()));
+					
+					if(index >= 0) {
+						Word word = newWordList.get(index);
+						if(importedWord.hidden != null)
+							word.setHidden(importedWord.hidden);
+						if(importedWord.definition != null)
+							word.setDefiniton(importedWord.definition);
+						if(importedWord.tags != null) 
+							word.setTags(importedWord.tags);
+						if(importedWord.isCapitalized())
+							word.setCapitalized(true);
+						//word.setAssociatedWords(importedWord.associatedWords);
+					} 
 				}
 			}
-			wordTableModel.validateNotHiddenList();
-			wordTableModel.fireTableDataChanged();
+			
+			wordTableModel.setWordList(newWordList);
+			Utils.updateRowHeight(wordTable, 0);
 		} catch (IOException e) {
 			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
@@ -506,7 +517,7 @@ public class SubtitlesPanel extends JPanel {
 		sorter.setSortable(WordTableModel.TAGS_COLUMN, false);
 		//sorter.setComparator(WordTableModel.WORD_COLUMN, (w1, w2) -> w1.toString().compareToIgnoreCase(w2.toString()));
 		wordTable.setRowSorter(sorter);	
-		wordTable.getColumnModel().getColumn(WordTableModel.COUNT_COLUMN).setCellRenderer(leftRenderer);
+		wordTable.getColumnModel().getColumn(WordTableModel.COUNT_COLUMN).setCellRenderer(leftRenderer);	
 	}
 	
 	private void updateReferenceNavText()
@@ -522,9 +533,16 @@ public class SubtitlesPanel extends JPanel {
 		int wordCount = wordTableModel.getWordList() != null ? wordTableModel.getWordList().size() : 0;
 		int showingCount = wordTableModel.getRowCount();
 		int selectedCount = wordTable.getSelectedRowCount();
-		
-		String text = String.format("%d Words, %d Showing, %d Selected", 
+		String text;
+		if(selectedCount == 1) {
+			int selectedRow = wordTable.getSelectedRow();
+			text = String.format("%d Words, %d Showing, Row %d selected", 
+					wordCount, showingCount, selectedRow);
+		} else {
+			text = String.format("%d Words, %d Showing, %d Rows selected", 
 				wordCount, showingCount, selectedCount);
+		}
+		
 		
 		table_info_label.setText(text);
 	}
@@ -550,83 +568,7 @@ public class SubtitlesPanel extends JPanel {
 		this.loaded = loaded;
 	}
 
-	private class TablePopup extends JPopupMenu implements PopupMenuListener
-	{
-		JMenuItem capitalizeMenu;
-		boolean capitalize;
-		
-		public TablePopup()
-		{
-			capitalizeMenu = new JMenuItem();
-			capitalizeMenu.addActionListener(e -> capitalizeClicked());
-			
-			JMenu toggleHiddenMenu = new JMenu("Toggle Hidden");
-			this.add(toggleHiddenMenu);
-			
-			JMenuItem toggleHiddenOnMenuItem = new JMenuItem("On");
-			toggleHiddenOnMenuItem.addActionListener(e -> toggleHidden(true));
-			toggleHiddenMenu.add(toggleHiddenOnMenuItem);
-			
-			JMenuItem toggleHiddenOffMenuItem = new JMenuItem("Off");
-			toggleHiddenOffMenuItem.addActionListener(e -> toggleHidden(false));
-			toggleHiddenMenu.add(toggleHiddenOffMenuItem);
-			
-			this.addPopupMenuListener(this);
-		}
-		
-		private void toggleHidden(boolean hidden)
-		{
-			for(int tableRow : wordTable.getSelectedRows()) {
-				int modelRow = wordTable.convertRowIndexToModel(tableRow);
-				Word word = wordTableModel.getWordList().get(modelRow);
-				word.setHidden(hidden);
-			}
-			wordTableModel.fireTableDataChanged();
-		}
-		
-		private void capitalizeClicked()
-		{
-			for(int row : wordTable.getSelectedRows()) {
-				int selectedModelRow = wordTable.convertRowIndexToModel(row);
-				Word selectedWord = (Word)wordTableModel.getValueAt(selectedModelRow, WordTableModel.WORD_COLUMN);
-				selectedWord.setCapitalized(capitalize);
-				wordTableModel.fireTableCellUpdated(selectedModelRow, WordTableModel.WORD_COLUMN);
-			}
-			
-		}
-
-		@Override
-		public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-			if(wordTable.getSelectedRowCount() == 0) {
-				this.remove(capitalizeMenu);
-				return;
-			}
-			int selectedViewColumn = wordTable.getSelectedColumn();
-			int selectedModelColumn = wordTable.convertColumnIndexToModel(selectedViewColumn);
-			
-			if(selectedModelColumn ==  WordTableModel.WORD_COLUMN) {
-				String targetWord = "...";
-				if(wordTable.getSelectedRowCount() == 1)
-					targetWord = selectedWord.toString();
-				if(Character.isUpperCase(selectedWord.toString().charAt(0))) {
-					capitalizeMenu.setText(String.format("Uncapitalize (%s)", targetWord));
-					capitalize = false;
-				} else {
-					capitalizeMenu.setText(String.format("Capitalize (%s)", targetWord));
-					capitalize = true;
-				}
-				this.add(capitalizeMenu, 0);
-			} else {
-				this.remove(capitalizeMenu);
-			}
-		}
-
-		@Override
-		public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
-
-		@Override
-		public void popupMenuCanceled(PopupMenuEvent e) {}
-	}
+	
 	
 	private class ForeignSubsPopup extends JPopupMenu implements PopupMenuListener
 	{
@@ -737,11 +679,11 @@ public class SubtitlesPanel extends JPanel {
 			
 			String selectedString = foreignSubtitleString.substring(start, end + 1).toLowerCase();
 			selectedString = wordFrequencyParser.preprocessWord(selectedString);
-			
+			Word selectedWord = new Word(selectedString);
 			// search for word in Model
 			int foundIndex = -1;
 			for(int i = 0; i < wordTableModel.getRowCount(); ++i) {
-				if(wordTableModel.getValueAt(i, WordTableModel.WORD_COLUMN).toString().equalsIgnoreCase(selectedString)) {
+				if(wordTableModel.getValueAt(i, WordTableModel.WORD_COLUMN).equals(selectedWord)) {
 					foundIndex = i;
 					break;
 				}
@@ -762,6 +704,7 @@ public class SubtitlesPanel extends JPanel {
 			
 			// scroll to word in wordTable
 			initialGoToReference = referenceNumber;
+			wordTable.clearSelection();
 			wordTable.setRowSelectionInterval(selectedRow, selectedRow);
 			wordTable.addColumnSelectionInterval(0, wordTableModel.getColumnCount() - 1);
 			initialGoToReference = -1;

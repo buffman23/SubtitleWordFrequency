@@ -39,6 +39,11 @@ public class SerializableWord {
 		return Character.isUpperCase(value.charAt(0));
 	}
 	
+	public boolean isGroup()
+	{
+		return associatedWords != null && associatedWords.size() > 0;
+	}
+	
 	@Override
 	public String toString()
 	{

@@ -2,6 +2,7 @@ package SubtitleWordFrq;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -10,6 +11,7 @@ import java.util.stream.IntStream;
 import javax.swing.JFileChooser;
 import javax.swing.JTable;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import org.apache.commons.io.FileUtils;
@@ -173,5 +175,40 @@ public class Utils {
 		chooser.setFileFilter(csvFilter);
 		
 		return chooser;
+	}
+	
+	public static<E extends Comparable<E>> int insertSorted(List<E> list, E item)
+	{
+		int insertIdx = Collections.binarySearch(list, item);
+		if(insertIdx < 0) {
+			insertIdx = -(insertIdx + 1);
+		}
+		list.add(insertIdx, item);
+		
+		return insertIdx;
+	}
+	
+	public static<E extends Comparable<E>> boolean removeSorted(List<E> list, E item)
+	{
+		int removeIdx = Collections.binarySearch(list, item);
+		if(removeIdx < 0) {
+			return false;
+		}
+		
+		list.remove(removeIdx);
+		return true;
+	}
+	
+	public static void updateRowHeight(JTable table, int margin) {
+	    final int rowCount = table.getRowCount();
+	    final int colCount = table.getColumnCount();
+	    for (int i = 0; i < rowCount; i++) {
+	        int maxHeight = 0;
+	        for (int j = 0; j < colCount; j++) {
+	            final TableCellRenderer renderer = table.getCellRenderer(i, j);
+	            maxHeight = Math.max(maxHeight, table.prepareRenderer(renderer, i, j).getPreferredSize().height);
+	        }
+	        table.setRowHeight(i, maxHeight + margin);
+	    }
 	}
 }

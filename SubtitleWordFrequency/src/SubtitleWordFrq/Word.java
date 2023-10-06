@@ -2,6 +2,7 @@ package SubtitleWordFrq;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -16,6 +17,8 @@ public class Word implements Comparable<Word> {
 	
 	private boolean hidden; // if user would like to hide word (b/c they already know it)
 	
+	private boolean collapsed;
+	
 	private int selectedReferenceIndex;
 	
 	private List<Caption> references;
@@ -29,24 +32,29 @@ public class Word implements Comparable<Word> {
 		// I decided to use LinkedList since many words will be low frequency and therefore not have many references.
 		this.references = new LinkedList<>();
 	}
-	
-	public Word(String word, Caption origin)
+
+	public Word(String value, Caption origin)
 	{
-		this(word);
+		this(value);
 		addReference(origin);
 	}
 	
-	public int getTotalCount() {
-		int total = count;
-		
-		if(associatedWords != null && !associatedWords.isEmpty())
-		{
-			total = associatedWords.stream()
-					.mapToInt(word -> word.getTotalCount())
-					.sum();
-		}
-		
-		return total;
+	public Word(String value, List<Word> associatedWords)
+	{
+		this(value);
+		setAssociatedWords(associatedWords);
+		setReferences(associatedWords.stream()
+			.flatMap(word -> word.getReferences().stream())
+			.collect(Collectors.toList())
+		);		
+		setCount(associatedWords.stream()
+			.mapToInt(word -> word.getCount())
+			.sum()
+		);
+		setTags(associatedWords.stream()
+			.flatMap(word -> word.getTags() != null ? word.getTags().stream() : Stream.empty())
+			.collect(Collectors.toList())
+		);
 	}
 	
 	public int getCount() {
@@ -88,19 +96,6 @@ public class Word implements Comparable<Word> {
 	public void setReferences(List<Caption> references) {
 		this.references = references;
 	}
-	
-	public List<Word> getAllAssociatedWords() {
-		if(associatedWords == null || associatedWords.isEmpty())
-			return associatedWords;
-		
-		List<Word> allAssociatedWords = associatedWords.stream()
-				.map(word -> word.getAllAssociatedWords())
-				.flatMap(Collection::stream)
-				.collect(Collectors.toList());
-		allAssociatedWords.addAll(associatedWords);
-		
-		return allAssociatedWords;
-	}
 
 	public List<Word> getAssociatedWords() {
 		return associatedWords;
@@ -108,6 +103,11 @@ public class Word implements Comparable<Word> {
 
 	public void setAssociatedWords(List<Word> associatedWords) {
 		this.associatedWords = associatedWords;
+	}
+	
+	public boolean isGroup()
+	{
+		return associatedWords != null && !associatedWords.isEmpty();
 	}
 	
 	public List<String> getTags() {
@@ -167,6 +167,14 @@ public class Word implements Comparable<Word> {
 			value = StringUtils.uncapitalize(value);
 	}
 
+	public boolean isCollapsed() {
+		return collapsed;
+	}
+
+	public void setCollapsed(boolean collapsed) {
+		this.collapsed = collapsed;
+	}
+
 	@Override
 	public String toString()
 	{
@@ -177,4 +185,24 @@ public class Word implements Comparable<Word> {
 	public int compareTo(Word o) {
 		return value.compareTo(o.value);
 	}
+	
+	@Override
+	public boolean equals(Object other)
+	{
+		if(other instanceof Word) { 
+			Word otherWord = (Word)other;
+			
+			if(value.equalsIgnoreCase(otherWord.value)) {
+				return true;
+			}
+			
+			if(associatedWords != null && associatedWords.contains(otherWord)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+		
+
 }

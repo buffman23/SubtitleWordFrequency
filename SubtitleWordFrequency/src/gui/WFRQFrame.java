@@ -1,7 +1,10 @@
 package gui;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+
 import java.awt.BorderLayout;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -236,28 +239,6 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		loadedPrimaryFile = null;
 	}
 	
-	public static void main(String args[])
-	{
-		try {
-            // Set System L&F
-	        UIManager.setLookAndFeel(
-	            UIManager.getSystemLookAndFeelClassName());
-	    } 
-	    catch (Exception e) {
-	       Utils.logger.severe(e.getMessage());
-	    }
-		
-		File dataFolder = new File("data");
-		if(!dataFolder.exists()) {
-			dataFolder.mkdir();
-		}
-		
-		WFRQFrame frame = new WFRQFrame();
-		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		frame.setSize(1183, 739);
-		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);
-	}
 	
 	private void addToRecents(File foreignSubsFile, File primarySubsFile)
 	{
@@ -340,4 +321,27 @@ public class WFRQFrame extends JFrame implements WindowListener {
 
 	@Override
 	public void windowDeactivated(WindowEvent e) {}
+	
+	public static void main(String args[])
+	{
+		try {
+            // Set System L&F
+	        UIManager.setLookAndFeel(
+	            UIManager.getSystemLookAndFeelClassName());
+	    } 
+	    catch (Exception e) {
+	       Utils.logger.severe(e.getMessage());
+	    }
+		
+		File dataFolder = new File("data");
+		if(!dataFolder.exists()) {
+			dataFolder.mkdir();
+		}
+		
+		WFRQFrame frame = new WFRQFrame();
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		frame.setSize(1183, 739);
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true);
+	}
 }

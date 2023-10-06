@@ -32,7 +32,7 @@ public class WordTableModel extends AbstractTableModel {
 	public WordTableModel(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles)
 	{
 		this.hiddenColumnEnabled = true;
-		this.setData(wordFrequencyList, documentSubtitles);
+		this.setWordList(wordFrequencyList, documentSubtitles);
 	}
 	
 	@Override
@@ -40,6 +40,9 @@ public class WordTableModel extends AbstractTableModel {
 	{
 		if(columnIndex == HIDDEN_COLUMN || columnIndex == DEFINITION_COLUMN || columnIndex == TAGS_COLUMN)
 			return true;
+		
+		if(columnIndex == WORD_COLUMN)
+			return getCurrentWordList().get(rowIndex).isGroup();
 		
 		return false;
 	}
@@ -150,11 +153,17 @@ public class WordTableModel extends AbstractTableModel {
 		else 
 			return Collections.unmodifiableList(notHiddenList);
 	}
+	
+	public void setWordList(List<Word> wordFrequencyList) {
+		setWordList(wordFrequencyList, null);
+	}
 
-	public void setData(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles) {
+	public void setWordList(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles) {
 		this.wordFrequencyList = wordFrequencyList;
-		this.documentSubtitles = documentSubtitles;
 		this.notHiddenList = null;
+		if(documentSubtitles != null)
+			this.documentSubtitles = documentSubtitles;
+		
 		
 		if(!hiddenColumnEnabled)
 			validateNotHiddenList();
@@ -184,7 +193,7 @@ public class WordTableModel extends AbstractTableModel {
 			.collect(Collectors.toList());
 	}
 	
-	public void validateNotHiddenList()
+	private void validateNotHiddenList()
 	{
 		if(wordFrequencyList == null)
 		{
@@ -192,9 +201,6 @@ public class WordTableModel extends AbstractTableModel {
 			return;
 		}
 		
-		boolean allNotHidden = notHiddenList != null && notHiddenList.stream().allMatch(IS_NOT_HIDDEN_PREDICATE);
-		if(!allNotHidden) {
-			notHiddenList = wordFrequencyList.stream().filter(IS_NOT_HIDDEN_PREDICATE).collect(Collectors.toList());
-		}
+		notHiddenList = wordFrequencyList.stream().filter(IS_NOT_HIDDEN_PREDICATE).collect(Collectors.toList());
 	}
 }
