@@ -87,9 +87,9 @@ public class ExportMenu extends JMenu
 		
 		File selectedFile = chooser.getSelectedFile();
 		
-		// add .json extension if missing
-		if(!selectedFile.getName().toLowerCase().endsWith(".json")) {
-			selectedFile = new File(selectedFile.getAbsolutePath() + ".json");
+		// add .wrdtbl extension if missing
+		if(!selectedFile.getName().toLowerCase().endsWith(".wrdtbl")) {
+			selectedFile = new File(selectedFile.getAbsolutePath() + ".wrdtbl");
 		}
 		
 		WordTableModel wordTableModel = (WordTableModel)table.getModel();

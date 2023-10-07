@@ -117,7 +117,7 @@ public class WordTable extends JTable {
 		{
 			for(int tableRow : getSelectedRows()) {
 				int modelRow = convertRowIndexToModel(tableRow);
-				Word word = getModel().getWordList().get(modelRow);
+				Word word = getModel().getCurrentWordList().get(modelRow);
 				word.setHidden(hidden);
 			}
 			getModel().fireTableDataChanged();
@@ -246,7 +246,7 @@ public class WordTable extends JTable {
 			int selectedModelColumn = convertColumnIndexToModel(selectedViewColumn);
 			
 			int selectedRowModel = convertRowIndexToModel(getSelectedRow());
-			Word selectedWord = getModel().getWordList().get(selectedRowModel);
+			Word selectedWord = getModel().getCurrentWordList().get(selectedRowModel);
 			
 			boolean addCapitalizeMenu = false;
 			boolean addCreateGroupMenu = false;

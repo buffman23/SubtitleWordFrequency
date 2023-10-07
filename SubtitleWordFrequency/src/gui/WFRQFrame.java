@@ -110,19 +110,13 @@ public class WFRQFrame extends JFrame implements WindowListener {
 	{
 		// load recent subtitles list
 		try {
-			recentSubtitles = Utils.deserialize("data/recent_subtitles.json", new TypeToken<List<List<String>>>() {}.getType());
-			if(recentSubtitles != null) {
-				for(List<String> pair : recentSubtitles) {
-					File foreignSubsFile = new File(pair.get(0));
-					File primarySubsFile;
-					
-					if(pair.size() > 1)  {
-						primarySubsFile = new File(pair.get(1));
-					} else {
-						primarySubsFile = null;
-					}
-					
-					addToRecents(foreignSubsFile, primarySubsFile);
+			List<List<String>> deserializedRecentSubtitles = Utils.deserialize("data/recent_subtitles.json", new TypeToken<List<List<String>>>() {}.getType());
+			recentSubtitles = new ArrayList<>(deserializedRecentSubtitles.size());
+			for(List<String> pair : deserializedRecentSubtitles) {
+				File foreignFile = new File(pair.get(0));
+				File primaryFile = new File(pair.get(1));
+				if(foreignFile.exists() && primaryFile.exists()) {
+					addToRecents(foreignFile, primaryFile);
 				}
 			}
 		} catch (IOException e2) {
@@ -212,6 +206,7 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		open_subtitles_menuitem.setEnabled(false);
 		close_subtitles_menuitem.setEnabled(true);
 		export_menu.setEnabled(true);
+		addToRecents(foreignSubtitlesFile, primarySubtitlesFile);
 	}
 	
 	private void closeClicked()
@@ -243,8 +238,6 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		close_subtitles_menuitem.setEnabled(false);
 		export_menu.setEnabled(false);
 		
-		
-		addToRecents(loadedForeignFile, loadedPrimaryFile);
 		loadedForeignFile = null;
 		loadedPrimaryFile = null;
 	}
@@ -276,16 +269,16 @@ public class WFRQFrame extends JFrame implements WindowListener {
 			recentSubtitles.remove(found);
 			recentSubtitlesMenu.remove(found);
 		}
-		recentSubtitles.add(0, pair);
 		
 		JMenuItem recentSubtitleMenuItem = new JMenuItem(text);
 		recentSubtitleMenuItem.addActionListener(e -> {
 			closeClicked();
-			if(!subtitles_panel.isLoaded())
+			if(!subtitles_panel.isLoaded()) {
 				loadSubtitles(foreignSubsFile, primarySubsFile);
+			}
 		});
-		recentSubtitlesMenu.add(recentSubtitleMenuItem);
-		
+		recentSubtitlesMenu.add(recentSubtitleMenuItem, 0);
+		recentSubtitles.add(0, pair);
 		recentSubtitlesMenu.setEnabled(true);
 	}
 
@@ -294,7 +287,6 @@ public class WFRQFrame extends JFrame implements WindowListener {
 
 	@Override
 	public void windowClosing(WindowEvent e) {
-		addToRecents(loadedForeignFile, loadedPrimaryFile);
 		try {
 			Utils.serialize(recentSubtitles, recentSubsFile, new TypeToken<List<List<String>>>(){}.getType());
 		} catch (IOException e1) {
