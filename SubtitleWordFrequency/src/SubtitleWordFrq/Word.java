@@ -1,6 +1,7 @@
 package SubtitleWordFrq;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +32,7 @@ public class Word implements Comparable<Word> {
 		this.definiton = "";
 		// I decided to use LinkedList since many words will be low frequency and therefore not have many references.
 		this.references = new LinkedList<>();
+		this.collapsed = true;
 	}
 
 	public Word(String value, Caption origin)
@@ -53,7 +55,14 @@ public class Word implements Comparable<Word> {
 		);
 		setTags(associatedWords.stream()
 			.flatMap(word -> word.getTags() != null ? word.getTags().stream() : Stream.empty())
+			.sorted()
 			.collect(Collectors.toList())
+		);
+		setDefiniton(associatedWords.stream()
+			.map(Word::getDefiniton)
+			.filter(Predicate.not(String::isBlank))
+			.findFirst()
+			.orElse("")
 		);
 	}
 	
@@ -203,6 +212,10 @@ public class Word implements Comparable<Word> {
 		return false;
 	}
 	
-		
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(value, definiton, tags, hidden, associatedWords);
+	}
 
 }

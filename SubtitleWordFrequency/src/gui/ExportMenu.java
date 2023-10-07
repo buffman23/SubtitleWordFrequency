@@ -78,7 +78,7 @@ public class ExportMenu extends JMenu
 	
 	private void exportWordDataClicked()
 	{
-		JFileChooser chooser = Utils.fileChooser("JavaScript Object Notation (*.json)", ".json");
+		JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
 		
 		if(chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
 		{

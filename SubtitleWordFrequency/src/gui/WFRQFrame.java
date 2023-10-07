@@ -1,11 +1,7 @@
 package gui;
 
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-
 import java.awt.BorderLayout;
-import java.awt.GraphicsEnvironment;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -15,9 +11,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.text.Utilities;
-
 import org.apache.commons.io.FilenameUtils;
 
 import com.google.gson.reflect.TypeToken;
@@ -25,17 +18,13 @@ import com.google.gson.reflect.TypeToken;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
-import SubtitleWordFrq.SerializableWord;
 import SubtitleWordFrq.Utils;
-import SubtitleWordFrq.Word;
 import javax.swing.JSeparator;
 
 public class WFRQFrame extends JFrame implements WindowListener {
-	private final File sessionFile = new File("data/session.json");
+	//private final File sessionFile = new File("data/session.json");
 	private final File recentSubsFile = new File("data/recent_subtitles.json");
 	
 	private SubtitlesPanel subtitles_panel;
@@ -155,7 +144,7 @@ public class WFRQFrame extends JFrame implements WindowListener {
 	
 	private void importWordDataClicked()
 	{
-		JFileChooser chooser = Utils.fileChooser("JavaScript Object Notation (*.json)", ".json");
+		JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
 		
 		if(chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
 		{
@@ -208,13 +197,13 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		loadedPrimaryFile = primarySubtitlesFile;
 		
 		if(subtitles_panel.isLoaded()) {
-			subtitles_panel.exportWordData(sessionFile);
+			//subtitles_panel.exportWordData(sessionFile);
 			subtitles_panel.unloadSubtitles();
 		}
 		
 		try {
 			subtitles_panel.loadSubtitles(foreignSubtitlesFile, primarySubtitlesFile);
-			subtitles_panel.importWordData(sessionFile);
+			//subtitles_panel.importWordData(sessionFile);
 		} catch (IOException e) {
 			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
@@ -227,7 +216,28 @@ public class WFRQFrame extends JFrame implements WindowListener {
 	
 	private void closeClicked()
 	{
-		subtitles_panel.exportWordData(sessionFile);
+		WordTableModel wordTableModel = (WordTableModel)subtitles_panel.getWordTable().getModel();
+		if(wordTableModel.isModified()) {
+			int response = JOptionPane.showConfirmDialog(
+					this, 
+					"Would you like to save table data?", 
+					"Save Table Data", 
+					JOptionPane.YES_NO_CANCEL_OPTION
+				);
+				
+			if(response == JOptionPane.CANCEL_OPTION) 
+				return;
+				
+			if(response == JOptionPane.YES_OPTION) {
+				JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
+				if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+					subtitles_panel.exportWordData(chooser.getSelectedFile());
+				else 
+					return;
+			}
+		}
+		
+		//subtitles_panel.exportWordData(sessionFile);
 		subtitles_panel.unloadSubtitles();
 		open_subtitles_menuitem.setEnabled(true);
 		close_subtitles_menuitem.setEnabled(false);
@@ -269,7 +279,11 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		recentSubtitles.add(0, pair);
 		
 		JMenuItem recentSubtitleMenuItem = new JMenuItem(text);
-		recentSubtitleMenuItem.addActionListener(e -> loadSubtitles(foreignSubsFile, primarySubsFile));
+		recentSubtitleMenuItem.addActionListener(e -> {
+			closeClicked();
+			if(!subtitles_panel.isLoaded())
+				loadSubtitles(foreignSubsFile, primarySubsFile);
+		});
 		recentSubtitlesMenu.add(recentSubtitleMenuItem);
 		
 		recentSubtitlesMenu.setEnabled(true);
@@ -288,23 +302,30 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		}
 		
 		// check if subtitles are open right now
-		if(close_subtitles_menuitem.isEnabled()) {
-			int response = JOptionPane.showConfirmDialog(
-				this, 
-				"Would you like to save definitions and hidden word list?", 
-				"Save session", 
-				JOptionPane.YES_NO_CANCEL_OPTION
-			);
-			
-			if(response != JOptionPane.CANCEL_OPTION) {
+		if(subtitles_panel.isLoaded()) {
+			WordTableModel wordTableModel = (WordTableModel)subtitles_panel.getWordTable().getModel();
+			if(wordTableModel.isModified()) {
+				int response = JOptionPane.showConfirmDialog(
+					this, 
+					"Would you like to save table data?", 
+					"Save modifications", 
+					JOptionPane.YES_NO_CANCEL_OPTION
+				);
+				
+				if(response == JOptionPane.CANCEL_OPTION) 
+					return;
+				
 				if(response == JOptionPane.YES_OPTION) {
-					subtitles_panel.exportWordData(sessionFile);
+					JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
+					if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+						subtitles_panel.exportWordData(chooser.getSelectedFile());
+					else {
+						return;
+					}
 				}
-				this.dispose();
 			}
-		} else {
-			this.dispose();
 		}
+		this.dispose();
 	}
 
 	@Override

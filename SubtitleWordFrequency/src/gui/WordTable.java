@@ -153,9 +153,10 @@ public class WordTable extends JTable {
 				return;
 			}
 			
-			// remove words that were added to group
+			// remove words that were added to group AND SORT
 			List<Word> newWordList = getModel().getWordList().stream()
 					.filter(word -> !group.getAssociatedWords().contains(word))
+					.sorted()
 					.collect(Collectors.toList());
 			
 			// add new group
@@ -198,6 +199,7 @@ public class WordTable extends JTable {
 			newWordList.remove(selectedGroup);
 			newWordList.addAll(removedFromGroup);
 			newWordList.add(newGroup);
+			newWordList.sort(Word::compareTo);
 			
 			// update model to use new word list
 			getModel().setWordList(newWordList);
@@ -209,10 +211,18 @@ public class WordTable extends JTable {
 			int selectedModelIndex = convertRowIndexToModel(getSelectedRow());
 			Word selectedGroup = getModel().getCurrentWordList().get(selectedModelIndex);
 			
+			for(Word word : selectedGroup.getAssociatedWords())
+			{
+				word.setDefiniton(selectedGroup.getDefiniton());
+				word.setTags(selectedGroup.getTags());
+				word.setHidden(selectedGroup.isHidden());
+			}
+			
 			// create new word list
 			List<Word> newWordList = new ArrayList<>(getModel().getWordList());
 			newWordList.remove(selectedGroup);
 			newWordList.addAll(selectedGroup.getAssociatedWords());
+			newWordList.sort(Word::compareTo);
 			
 			// update model to use new word list
 			getModel().setWordList(newWordList);

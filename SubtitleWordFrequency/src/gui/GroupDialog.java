@@ -203,8 +203,7 @@ public class GroupDialog extends JDialog {
 				return;
 			}
 			
-			resultGroup = new Word(textField.getText());
-			resultGroup.setAssociatedWords(groupListModel.toList());
+			resultGroup = new Word(textField.getText(), groupListModel.toList());
 		}
 		this.dispose();
 	}

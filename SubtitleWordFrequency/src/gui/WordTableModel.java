@@ -23,11 +23,13 @@ public class WordTableModel extends AbstractTableModel {
 	private static final Class<?>[] COLUMN_CLASSES = new Class<?>[] { 
 		Word.class, String.class, String.class,Integer.class, String.class, String.class, Boolean.class
 	};
+	private static final Predicate<Word> IS_NOT_HIDDEN_PREDICATE = word -> !word.isHidden();
+	
 	private List<Word> wordFrequencyList;
 	private List<Word> notHiddenList;
 	private DocumentSubtitles documentSubtitles;
 	private boolean hiddenColumnEnabled;
-	private static final Predicate<Word> IS_NOT_HIDDEN_PREDICATE = word -> !word.isHidden();
+	private Integer initialHashCode;
 
 	public WordTableModel(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles)
 	{
@@ -159,11 +161,14 @@ public class WordTableModel extends AbstractTableModel {
 	}
 
 	public void setWordList(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles) {
+		// only record hashcode the first time the model's source list is set
+		if(this.wordFrequencyList == null && wordFrequencyList != null)
+			initialHashCode = wordFrequencyList.hashCode();
+		
 		this.wordFrequencyList = wordFrequencyList;
 		this.notHiddenList = null;
 		if(documentSubtitles != null)
 			this.documentSubtitles = documentSubtitles;
-		
 		
 		if(!hiddenColumnEnabled)
 			validateNotHiddenList();
@@ -202,5 +207,13 @@ public class WordTableModel extends AbstractTableModel {
 		}
 		
 		notHiddenList = wordFrequencyList.stream().filter(IS_NOT_HIDDEN_PREDICATE).collect(Collectors.toList());
+	}
+
+	public boolean isModified() {
+		if(wordFrequencyList == null || initialHashCode == null)
+			return false;
+		
+		int currentHashCode = wordFrequencyList.hashCode();
+		return initialHashCode != currentHashCode;
 	}
 }
