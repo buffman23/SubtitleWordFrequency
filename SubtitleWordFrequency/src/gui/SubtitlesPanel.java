@@ -469,17 +469,29 @@ public class SubtitlesPanel extends JPanel {
 				if(importedWord.isGroup()) {
 					List<Word> assocWords = new ArrayList<>(importedWord.associatedWords.size());
 					for(String wordString : importedWord.associatedWords) {
-						
+							if(wordString.equals("kind")) {
+								System.out.println();
+							}
 							int idx = Collections.binarySearch(newWordList, new Word(wordString));
 							if(idx >= 0)
 								assocWords.add(newWordList.get(idx));
 						}
-					Word group = new Word(importedWord.toString(), assocWords);
-					newWordList.removeAll(assocWords);
-					newWordList.add(group);
+					// only add group to table if not empty
+					if(assocWords.size() > 0) {
+						Word group = new Word(importedWord.toString(), assocWords);
+						if(importedWord.hidden != null)
+							group.setHidden(importedWord.hidden);
+						if(importedWord.definition != null)
+							group.setDefiniton(importedWord.definition);
+						if(importedWord.tags != null) 
+							group.setTags(importedWord.tags);
+						//if(importedWord.isCapitalized())
+							//group.setCapitalized(true);
+						newWordList.removeAll(assocWords);
+						newWordList.add(group);
+					}
 				} else {
-					int index = Collections.binarySearch(newWordList, importedWord, 
-							(word, serializableWord) -> word.toString().compareToIgnoreCase(serializableWord.toString()));
+					int index = Collections.binarySearch(newWordList, new Word(importedWord.value));
 					
 					if(index >= 0) {
 						Word word = newWordList.get(index);

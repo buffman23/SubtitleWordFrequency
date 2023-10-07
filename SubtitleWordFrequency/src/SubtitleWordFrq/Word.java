@@ -149,6 +149,9 @@ public class Word implements Comparable<Word> {
 	}
 	
 	public Caption getSelectedReference() {
+		if(references.size() == 0) {
+			System.out.println();
+		}
 		return references.get(selectedReferenceIndex);
 	}
 
@@ -192,7 +195,7 @@ public class Word implements Comparable<Word> {
 
 	@Override
 	public int compareTo(Word o) {
-		return value.compareTo(o.value);
+		return value.compareToIgnoreCase(o.value);
 	}
 	
 	@Override
