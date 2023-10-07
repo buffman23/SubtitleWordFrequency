@@ -16,6 +16,9 @@ SubtitleWordFrequency/target/
 # data folder
 data/
 
+#ignore folder
+ignore/
+
 # Package Files #
 *.jar
 *.war
