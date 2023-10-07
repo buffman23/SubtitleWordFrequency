@@ -462,17 +462,18 @@ public class SubtitlesPanel extends JPanel {
 			if(importedWordData == null) {
 				return;
 			}
+			// create a copy of word list
 			List<Word> newWordList = new ArrayList<>(wordTableModel.getWordList());
 			
 			for(SerializableWord importedWord : importedWordData) {
 				if(importedWord.isGroup()) {
-					List<Word> assocWords = importedWord.associatedWords.stream()
-							.map(str -> new Word(str))
-							.map(pseudoWord -> {
-								int idx = Collections.binarySearch(newWordList, pseudoWord);
-								return newWordList.get(idx);
-							})
-							.collect(Collectors.toList());
+					List<Word> assocWords = new ArrayList<>(importedWord.associatedWords.size());
+					for(String wordString : importedWord.associatedWords) {
+						
+							int idx = Collections.binarySearch(newWordList, new Word(wordString));
+							if(idx >= 0)
+								assocWords.add(newWordList.get(idx));
+						}
 					Word group = new Word(importedWord.toString(), assocWords);
 					newWordList.removeAll(assocWords);
 					newWordList.add(group);
