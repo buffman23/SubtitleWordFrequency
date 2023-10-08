@@ -17,7 +17,7 @@ public class PreprocessConfig {
 	{
 		PreprocessConfig preprocessConfig;
 		try {
-			preprocessConfig = Utils.deserialize("preprocess.json", PreprocessConfig.class);
+			preprocessConfig = Utils.deserialize("data/preprocess.json", PreprocessConfig.class);
 		} catch (IOException e) {
 			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
@@ -30,7 +30,7 @@ public class PreprocessConfig {
 	public static void save(PreprocessConfig preprocessConfig)
 	{
 		try {
-			Utils.serialize(preprocessConfig, "preprocess.json", PreprocessConfig.class);
+			Utils.serialize(preprocessConfig, "data/preprocess.json", PreprocessConfig.class);
 		} catch (IOException e) {
 			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
