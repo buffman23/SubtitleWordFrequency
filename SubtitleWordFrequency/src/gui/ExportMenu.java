@@ -26,13 +26,15 @@ public class ExportMenu extends JMenu
 {
 	
 	private JMenuItem exportHiddenWordListMenuItem;
+	private WFRQFrame frame;
 	private JTable table;
 	
-	public ExportMenu(JTable table, boolean popupExportMenu)
+	public ExportMenu(WFRQFrame frame, boolean popupExportMenu)
 	{
 		super("Export");
 		
-		this.table = table;
+		this.frame = frame;
+		this.table = frame.getSubtitlesPanel().getWordTable();
 		
 		JMenu exportCSVMenu = new JMenu("CSV");
 		JMenuItem exportCSVAllMenuItem = new JMenuItem("All");
@@ -92,11 +94,8 @@ public class ExportMenu extends JMenu
 			selectedFile = new File(selectedFile.getAbsolutePath() + ".wrdtbl");
 		}
 		
-		WordTableModel wordTableModel = (WordTableModel)table.getModel();
-		List<SerializableWord> wordList = wordTableModel.getSerializableWords();
-		
 		try {
-			Utils.serialize(wordList, selectedFile, new TypeToken<List<SerializableWord>>(){}.getType());
+			frame.getSubtitlesPanel().exportWordData(selectedFile);
 			JOptionPane.showMessageDialog(null, "Exported to " + selectedFile.getName(), "Successful words export", JOptionPane.INFORMATION_MESSAGE);
 		} catch (IOException e) {
 			Utils.logger.severe(e.getMessage());

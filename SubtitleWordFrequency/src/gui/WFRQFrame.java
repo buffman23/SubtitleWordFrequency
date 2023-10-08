@@ -17,6 +17,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,7 +80,7 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		importWordDataMenuItem.addActionListener(e -> importWordDataClicked());
 		importMenu.add(importWordDataMenuItem);
 		
-		export_menu = new ExportMenu(subtitles_panel.getWordTable(), false);
+		export_menu = new ExportMenu(this, false);
 		export_menu.setEnabled(false);
 		file_menu.add(export_menu);
 		
@@ -136,6 +137,10 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		}
 	}
 	
+	public SubtitlesPanel getSubtitlesPanel() {
+		return subtitles_panel;
+	}
+
 	private void importWordDataClicked()
 	{
 		JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
@@ -226,7 +231,12 @@ public class WFRQFrame extends JFrame implements WindowListener {
 			if(response == JOptionPane.YES_OPTION) {
 				JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
 				if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
-					subtitles_panel.exportWordData(chooser.getSelectedFile());
+					try {
+						subtitles_panel.exportWordData(chooser.getSelectedFile());
+					} catch (IOException e) {
+						Utils.logger.severe(e.getMessage());
+						//e.printStackTrace();
+					}
 				else 
 					return;
 			}
@@ -310,7 +320,12 @@ public class WFRQFrame extends JFrame implements WindowListener {
 				if(response == JOptionPane.YES_OPTION) {
 					JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
 					if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
-						subtitles_panel.exportWordData(chooser.getSelectedFile());
+						try {
+							subtitles_panel.exportWordData(chooser.getSelectedFile());
+						} catch (IOException e1) {
+							Utils.logger.severe(e1.getMessage());
+							//e1.printStackTrace();
+						}
 					else {
 						return;
 					}

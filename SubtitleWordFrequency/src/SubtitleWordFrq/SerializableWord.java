@@ -7,7 +7,7 @@ import javax.management.InstanceNotFoundException;
 
 import com.google.gson.annotations.SerializedName;
 
-public class SerializableWord {
+public class SerializableWord implements Comparable<SerializableWord> {
 	@SerializedName("word")
 	public String value;
 	public String definition;
@@ -34,6 +34,15 @@ public class SerializableWord {
 			this.associatedWords = word.getAssociatedWords().stream().map(Word::toString).collect(Collectors.toList());
 	}
 	
+	public SerializableWord(SerializableWord other)
+	{
+		this.value = other.value;
+		this.definition = other.definition;
+		this.tags = other.tags;
+		this.hidden = other.hidden;
+		this.associatedWords = other.associatedWords;
+	}
+	
 	public boolean isCapitalized()
 	{
 		return Character.isUpperCase(value.charAt(0));
@@ -53,5 +62,11 @@ public class SerializableWord {
 	@Override
 	public boolean equals(Object other) {
 		return this.toString().equals(other.toString());
+	}
+	
+	@Override
+	public int compareTo(SerializableWord other)
+	{
+		return this.value.compareToIgnoreCase(other.value);
 	}
 }

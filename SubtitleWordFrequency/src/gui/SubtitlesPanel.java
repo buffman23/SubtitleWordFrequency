@@ -24,6 +24,7 @@ import com.google.gson.reflect.TypeToken;
 
 import SubtitleWordFrq.Caption;
 import SubtitleWordFrq.DocumentSubtitles;
+import SubtitleWordFrq.ImportedGroup;
 import SubtitleWordFrq.SerializableWord;
 import SubtitleWordFrq.Utils;
 import SubtitleWordFrq.Word;
@@ -43,6 +44,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.awt.GridLayout;
@@ -85,6 +87,10 @@ public class SubtitlesPanel extends JPanel {
 	private String foreignSubtitleString;
 	private String primarySubtitleString;
 	
+	// Words that were imported but are not present in the subtitles, so are not part of the table.
+	// They must be saved to be later joined back in for exports.
+	private List<SerializableWord> nonPresentWords;
+	private HashMap<String,ImportedGroup> importedGroups;
 	private SubtitleTextPane foreign_textpane;
 	private SubtitleTextPane primary_textpane;
 	private WordTable wordTable;
@@ -269,6 +275,8 @@ public class SubtitlesPanel extends JPanel {
 		next_button.setMinimumSize(prev_button.getPreferredSize());
 		
 		updateTableInfoText();
+		nonPresentWords = new ArrayList<>();
+		importedGroups = new HashMap<>();
 	}
 	
 	private void wordTableRowSelected(ListSelectionEvent e)
@@ -441,22 +449,35 @@ public class SubtitlesPanel extends JPanel {
 		toggleHidenButton.setEnabled(false);
 		updateTableInfoText();
 		loaded = false;
+		nonPresentWords.clear();
+		importedGroups.clear();
 	}
 	
-	public void exportWordData(File file)
+	public void exportWordData(File file) throws IOException
 	{
-		try {
-			Type listType = new TypeToken<List<SerializableWord>>() {}.getType();
-			List<SerializableWord> tableWordData = wordTableModel.getSerializableWords();
-			Utils.serialize(tableWordData, file, listType);
-		} catch (IOException e) {
-			Utils.logger.severe(e.getMessage());
-			//e.printStackTrace();
+		Type listType = new TypeToken<List<SerializableWord>>() {}.getType();
+		List<SerializableWord> tableWordData = wordTableModel.getSerializableWords();
+		List<SerializableWord> combinedWordData = new ArrayList<>(tableWordData.size() + nonPresentWords.size());
+		
+		for(SerializableWord word : tableWordData) {
+			if(word.isGroup()) {
+				// compare the current state of a group to it's imported state to merge changes.
+				ImportedGroup importedGroup = importedGroups.get(word.value);
+				if(importedGroup != null) {
+					word = importedGroup.getMergedGroup(word);
+				} 
+			}
+			combinedWordData.add(word);
 		}
+		combinedWordData.addAll(nonPresentWords);
+		combinedWordData.sort(SerializableWord::compareTo);
+		Utils.serialize(combinedWordData, file, listType);
 	}
 	
 	public void importWordData(File file)
 	{
+		nonPresentWords.clear();
+		importedGroups.clear();
 		try {
 			List<SerializableWord> importedWordData = Utils.deserialize(file, new TypeToken<List<SerializableWord>>() {}.getType());
 			if(importedWordData == null) {
@@ -469,9 +490,6 @@ public class SubtitlesPanel extends JPanel {
 				if(importedWord.isGroup()) {
 					List<Word> assocWords = new ArrayList<>(importedWord.associatedWords.size());
 					for(String wordString : importedWord.associatedWords) {
-							if(wordString.equals("kind")) {
-								System.out.println();
-							}
 							int idx = Collections.binarySearch(newWordList, new Word(wordString));
 							if(idx >= 0)
 								assocWords.add(newWordList.get(idx));
@@ -489,6 +507,10 @@ public class SubtitlesPanel extends JPanel {
 							//group.setCapitalized(true);
 						newWordList.removeAll(assocWords);
 						newWordList.add(group);
+						importedGroups.put(importedWord.toString(),
+							new ImportedGroup(importedWord, assocWords.stream().map(Word::toString).collect(Collectors.toList())));
+					} else {
+						nonPresentWords.add(importedWord);
 					}
 				} else {
 					int index = Collections.binarySearch(newWordList, new Word(importedWord.value));
@@ -504,7 +526,9 @@ public class SubtitlesPanel extends JPanel {
 						if(importedWord.isCapitalized())
 							word.setCapitalized(true);
 						//word.setAssociatedWords(importedWord.associatedWords);
-					} 
+					} else {
+						nonPresentWords.add(importedWord);
+					}
 				}
 			}
 			
@@ -576,12 +600,6 @@ public class SubtitlesPanel extends JPanel {
 	public boolean isLoaded() {
 		return loaded;
 	}
-
-	public void setLoaded(boolean loaded) {
-		this.loaded = loaded;
-	}
-
-	
 	
 	private class ForeignSubsPopup extends JPopupMenu implements PopupMenuListener
 	{
