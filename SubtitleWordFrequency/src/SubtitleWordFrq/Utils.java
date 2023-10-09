@@ -113,7 +113,7 @@ public class Utils {
 			columnIndexTable[i] = table.convertColumnIndexToModel(i); 
 		}
 		
-		try(PrintWriter pw = new PrintWriter(outFile))
+		try(PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(outFile), "UTF-8")))
 		{
 			// print column headers
 			//for(int i = 0; i < columnCount - 1; ++i) {
