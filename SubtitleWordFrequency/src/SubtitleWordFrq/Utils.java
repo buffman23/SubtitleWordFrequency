@@ -36,11 +36,10 @@ public class Utils {
 			try(FileReader fr = new FileReader(file)){
 				return gson.fromJson(fr, type);
 			}
-		} else {
-			logger.severe(String.format("Failed to deserialize file. File does not exist %s", file.getAbsolutePath()));
 		}
 		
-		return null;
+		throw new IOException(String.format("Failed to deserialize file. File does not exist %s", file.getAbsolutePath()));
+		
 	}
 	
 	public static<T> void serialize(T object, String filepath, Type type) throws IOException
@@ -129,13 +128,15 @@ public class Utils {
 			for(int i = 0; i < rows.length; ++i) {
 				int rowIndex = table.convertRowIndexToModel(rows[i]);
 				for(int j = 0; j < columnCount - 1; ++j) {
-					String escapedValue = StringEscapeUtils.escapeCsv(tableModel.getValueAt(rowIndex, columnIndexTable[j]).toString());
+					String csvValue = tableModel.getValueAt(rowIndex, columnIndexTable[j]).toString().replace("\n", " ");
+					String escapedValue = StringEscapeUtils.escapeCsv(csvValue);
 					pw.print(escapedValue);
 					pw.print(',');
 				}
 				
 				// print last value separately avoid extra comma
-				String escapedValue = StringEscapeUtils.escapeCsv(tableModel.getValueAt(rowIndex, columnIndexTable[columnCount - 1]).toString());
+				String csvValue = tableModel.getValueAt(rowIndex, columnIndexTable[columnCount - 1]).toString().replace("\n", " ");
+				String escapedValue = StringEscapeUtils.escapeCsv(csvValue);
 				if(i == rows.length - 1) {
 					// don't add newline for last line in csv file
 					pw.print(escapedValue);

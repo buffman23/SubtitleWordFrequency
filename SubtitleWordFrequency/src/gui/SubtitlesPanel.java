@@ -485,15 +485,21 @@ public class SubtitlesPanel extends JPanel {
 			}
 			// create a copy of word list
 			List<Word> newWordList = new ArrayList<>(wordTableModel.getWordList());
+			newWordList.sort(Word::compareTo);
 			
 			for(SerializableWord importedWord : importedWordData) {
 				if(importedWord.isGroup()) {
 					List<Word> assocWords = new ArrayList<>(importedWord.associatedWords.size());
+					// add imported Word to its own associated words list if not already. This is to prevent
+					// a group and a word existing at the same time with the same value.
+					if(!importedWord.associatedWords.contains(importedWord.toString())) {
+						importedWord.associatedWords.add(importedWord.toString());
+					}
 					for(String wordString : importedWord.associatedWords) {
-							int idx = Collections.binarySearch(newWordList, new Word(wordString));
-							if(idx >= 0)
-								assocWords.add(newWordList.get(idx));
-						}
+						int idx = Collections.binarySearch(newWordList, new Word(wordString));
+						if(idx >= 0)
+							assocWords.add(newWordList.get(idx));
+					}
 					// only add group to table if not empty
 					if(assocWords.size() > 0) {
 						Word group = new Word(importedWord.toString(), assocWords);
@@ -506,7 +512,7 @@ public class SubtitlesPanel extends JPanel {
 						//if(importedWord.isCapitalized())
 							//group.setCapitalized(true);
 						newWordList.removeAll(assocWords);
-						newWordList.add(group);
+						Utils.insertSorted(newWordList, group);
 						importedGroups.put(importedWord.toString(),
 							new ImportedGroup(importedWord, assocWords.stream().map(Word::toString).collect(Collectors.toList())));
 					} else {

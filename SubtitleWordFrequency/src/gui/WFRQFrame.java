@@ -111,7 +111,7 @@ public class WFRQFrame extends JFrame implements WindowListener {
 	{
 		// load recent subtitles list
 		try {
-			List<List<String>> deserializedRecentSubtitles = Utils.deserialize("data/recent_subtitles.json", new TypeToken<List<List<String>>>() {}.getType());
+			List<List<String>> deserializedRecentSubtitles = Utils.deserialize(recentSubsFile, new TypeToken<List<List<String>>>() {}.getType());
 			recentSubtitles = new ArrayList<>(deserializedRecentSubtitles.size());
 			for(List<String> pair : deserializedRecentSubtitles) {
 				File foreignFile = new File(pair.get(0));
