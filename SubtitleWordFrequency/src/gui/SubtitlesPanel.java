@@ -131,8 +131,7 @@ public class SubtitlesPanel extends JPanel {
 		table_panel.setLayout(gbl_table_panel);
 		
 		wordTableModel = new WordTableModel(null, null);
-		
-		
+				
 		leftRenderer = new DefaultTableCellRenderer();
 		leftRenderer.setHorizontalAlignment(JLabel.LEFT);
 		
@@ -590,9 +589,14 @@ public class SubtitlesPanel extends JPanel {
 		table_info_label.setText(text);
 	}
 	
-	public JTable getWordTable()
+	public WordTable getWordTable()
 	{
 		return wordTable;
+	}
+	
+	public List<Word> getWordList()
+	{
+		return wordTableModel.getWordList();
 	}
 	
 	private void setReferenceNavEnabled(boolean enabled) {

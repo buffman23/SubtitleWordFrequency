@@ -142,11 +142,13 @@ public class WordTable extends JTable {
 					.mapToObj(i -> getModel().getCurrentWordList().get(i))
 					.collect(Collectors.toList());
 			
-			List<Word> currentNoGroupWordList = getModel().getCurrentWordList().stream()
-					.filter(word -> !word.isGroup())
-					.collect(Collectors.toList());
+			
+			List<Word> currentWordList = getModel().getCurrentWordList();
+			//List<Word> currentNoGroupWordList = getModel().getCurrentWordList().stream()
+			//		.filter(word -> !word.isGroup())
+			//		.collect(Collectors.toList());
 					
-			groupDialog.showCreateDialog(currentNoGroupWordList, selectedWords);
+			groupDialog.showCreateDialog(currentWordList, selectedWords);
 			Word group = groupDialog.getResult();
 			if(group == null)
 			{
@@ -158,6 +160,8 @@ public class WordTable extends JTable {
 					.filter(word -> !group.getAssociatedWords().contains(word))
 					.sorted()
 					.collect(Collectors.toList());
+			
+			group.ungroupAssociatedWords();
 			
 			// add new group
 			Utils.insertSorted(newWordList, group);
@@ -268,7 +272,11 @@ public class WordTable extends JTable {
 						}
 						
 						// check if word is a group
-						addEditGroupMenu = selectedWord.isGroup();
+						if(selectedWord.isGroup()) {
+							addEditGroupMenu = true;
+						} else {
+							addCreateGroupMenu = true;
+						}
 					} else {
 						addCreateGroupMenu = true;
 					}

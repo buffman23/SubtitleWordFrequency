@@ -49,10 +49,6 @@ public class Word implements Comparable<Word> {
 			.flatMap(word -> word.getReferences().stream())
 			.collect(Collectors.toList())
 		);		
-		setCount(associatedWords.stream()
-			.mapToInt(word -> word.getCount())
-			.sum()
-		);
 		setTags(associatedWords.stream()
 			.flatMap(word -> word.getTags() != null ? word.getTags().stream() : Stream.empty())
 			.sorted()
@@ -67,6 +63,9 @@ public class Word implements Comparable<Word> {
 	}
 	
 	public int getCount() {
+		if(associatedWords != null) {
+			return associatedWords.stream().mapToInt(Word::getCount).sum();
+		}
 		return count;
 	}
 
@@ -185,6 +184,20 @@ public class Word implements Comparable<Word> {
 
 	public void setCollapsed(boolean collapsed) {
 		this.collapsed = collapsed;
+	}
+	
+	public void ungroupAssociatedWords()
+	{
+		if(associatedWords == null)
+			return;
+		
+		for(int i = associatedWords.size() - 1; i >= 0; --i) {
+			Word assocWord = associatedWords.get(i);
+			if(assocWord.isGroup()) {
+				associatedWords.remove(i);
+				associatedWords.addAll(assocWord.getAssociatedWords());
+			}
+		}
 	}
 
 	@Override

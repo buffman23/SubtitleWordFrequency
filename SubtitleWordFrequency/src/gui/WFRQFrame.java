@@ -2,6 +2,7 @@ package gui;
 
 import javax.swing.JFrame;
 import java.awt.BorderLayout;
+import java.awt.Panel;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -18,10 +19,14 @@ import com.google.gson.reflect.TypeToken;
 import java.io.File;
 import java.io.IOException;
 import java.lang.System.Logger;
+import java.security.KeyStore.PrivateKeyEntry;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
 import SubtitleWordFrq.Utils;
+import SubtitleWordFrq.Word;
+
 import javax.swing.JSeparator;
 
 public class WFRQFrame extends JFrame implements WindowListener {
@@ -34,7 +39,7 @@ public class WFRQFrame extends JFrame implements WindowListener {
 
 	private JMenuItem open_subtitles_menuitem;
 
-	private JMenu export_menu;
+	private ExportMenu export_menu;
 	
 	private List<List<String>> recentSubtitles;
 	private static final int MAX_RECENTS_SIZE = 5;
@@ -80,7 +85,8 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		importWordDataMenuItem.addActionListener(e -> importWordDataClicked());
 		importMenu.add(importWordDataMenuItem);
 		
-		export_menu = new ExportMenu(this, false);
+		export_menu = new ExportMenu();
+		export_menu.setFrame(this);
 		export_menu.setEnabled(false);
 		file_menu.add(export_menu);
 		
@@ -90,6 +96,13 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		JSeparator separator_1 = new JSeparator();
 		file_menu.add(separator_1);
 		file_menu.add(exitMenuItem);
+		
+		JMenu tools_menu = new JMenu("Tools");
+		menuBar.add(tools_menu);
+		
+		JMenuItem find_groups_menuitem = new JMenuItem("Find Groups");
+		find_groups_menuitem.addActionListener(e -> findGroupsClicked());
+		tools_menu.add(find_groups_menuitem);
 		
 		JMenu search_menu = new JMenu("Search");
 		search_menu.setEnabled(false);
@@ -139,6 +152,26 @@ public class WFRQFrame extends JFrame implements WindowListener {
 	
 	public SubtitlesPanel getSubtitlesPanel() {
 		return subtitles_panel;
+	}
+	
+	private void findGroupsClicked()
+	{
+		GroupFinderDialog groupFinderDialog = new GroupFinderDialog(this);
+		String inputString = JOptionPane.showInputDialog("Enter word distance threshold", 2);
+		
+		if(inputString == null || inputString.isBlank())
+			return;
+		
+		try {
+			int distanceThreshold = Integer.parseInt(inputString);
+			groupFinderDialog.showDialog(subtitles_panel.getWordList(), distanceThreshold);
+			List<Word> newWordList = groupFinderDialog.getWordList();
+			if(newWordList != null) {
+				subtitles_panel.getWordTable().getModel().setWordList(newWordList);
+			}
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(this, "Invalid number format", "Input Error", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	private void importWordDataClicked()

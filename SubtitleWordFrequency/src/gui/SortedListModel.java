@@ -51,8 +51,23 @@ public class SortedListModel<E extends Comparable<E>> extends AbstractListModel<
 		return true;
 	}
 	
+	public E remove(int index)
+	{
+		return list.remove(index);
+	}
+	
 	public List<E> toList()
 	{
 		return new ArrayList<E>(list);
+	}
+	
+	public boolean contains(E element)
+	{
+		return Collections.binarySearch(list, element) >= 0;
+	}
+	
+	public int indexOf(E element)
+	{
+		return Collections.binarySearch(list, element);
 	}
 }

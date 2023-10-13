@@ -24,17 +24,12 @@ import SubtitleWordFrq.Word;
 
 public class ExportMenu extends JMenu
 {
-	
-	private JMenuItem exportHiddenWordListMenuItem;
 	private WFRQFrame frame;
 	private JTable table;
 	
-	public ExportMenu(WFRQFrame frame, boolean popupExportMenu)
+	public ExportMenu()
 	{
 		super("Export");
-		
-		this.frame = frame;
-		this.table = frame.getSubtitlesPanel().getWordTable();
 		
 		JMenu exportCSVMenu = new JMenu("CSV");
 		JMenuItem exportCSVAllMenuItem = new JMenuItem("All");
@@ -102,5 +97,10 @@ public class ExportMenu extends JMenu
 			JOptionPane.showMessageDialog(null, e.getMessage(), "Failed words export", JOptionPane.INFORMATION_MESSAGE);
 			//e.printStackTrace();
 		}
+	}
+
+	public void setFrame(WFRQFrame frame) {
+		this.frame = frame;
+		this.table = frame.getSubtitlesPanel().getWordTable();
 	}
 }
