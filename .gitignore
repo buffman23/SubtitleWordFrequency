@@ -14,7 +14,8 @@
 SubtitleWordFrequency/target/
 
 # data folder
-data/
+SubtitleWordFrequency/data/*
+!SubtitleWordFrequency/data/preprocess.json
 
 #ignore folder
 ignore/
