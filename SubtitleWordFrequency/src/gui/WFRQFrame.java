@@ -126,7 +126,8 @@ public class WFRQFrame extends JFrame implements WindowListener {
 		try {
 			List<List<String>> deserializedRecentSubtitles = Utils.deserialize(recentSubsFile, new TypeToken<List<List<String>>>() {}.getType());
 			recentSubtitles = new ArrayList<>(deserializedRecentSubtitles.size());
-			for(List<String> pair : deserializedRecentSubtitles) {
+			for(int i = deserializedRecentSubtitles.size() - 1; i >=0; --i) {
+				List<String> pair = deserializedRecentSubtitles.get(i);
 				File foreignFile = new File(pair.get(0));
 				File primaryFile = new File(pair.get(1));
 				if(foreignFile.exists() && primaryFile.exists()) {
