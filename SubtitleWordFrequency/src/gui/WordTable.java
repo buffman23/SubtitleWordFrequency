@@ -20,6 +20,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.RowSorter;
+import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
@@ -27,14 +28,20 @@ import javax.swing.event.PopupMenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+
 import SubtitleWordFrq.Utils;
 import SubtitleWordFrq.Word;
 
 public class WordTable extends JTable {
+	private DefaultTableCellRenderer leftRenderer;
 	
 	public WordTable()
 	{
 		super(new WordTableModel(null, null));
+		
+		leftRenderer = new DefaultTableCellRenderer();
+		leftRenderer.setHorizontalAlignment(JLabel.LEFT);
 		
 		setComponentPopupMenu(new TablePopup());
 		
@@ -57,6 +64,24 @@ public class WordTable extends JTable {
 	{
 		super.setRowSorter(rowSorter);
 		reapplyAttributes();
+	}
+	
+	public void rebuildSorter()
+	{
+		WordTableModel wordTableModel = getModel();
+		TableRowSorter<WordTableModel> sorter = new TableRowSorter<>(wordTableModel);
+		ArrayList<RowSorter.SortKey> list = new ArrayList<>();
+		list.add(new RowSorter.SortKey(WordTableModel.COUNT_COLUMN, SortOrder.DESCENDING));
+		list.add(new RowSorter.SortKey(WordTableModel.WORD_COLUMN, SortOrder.ASCENDING));
+		if(wordTableModel.getColumnCount() == 7)
+			list.add(new RowSorter.SortKey(WordTableModel.HIDDEN_COLUMN, SortOrder.ASCENDING));
+		sorter.setSortKeys(list);
+		sorter.setSortable(WordTableModel.FOREIGN_EXAMPLE, false);
+		sorter.setSortable(WordTableModel.PRIMARY_EXAMPLE, false);
+		sorter.setSortable(WordTableModel.TAGS_COLUMN, false);
+		//sorter.setComparator(WordTableModel.WORD_COLUMN, (w1, w2) -> w1.toString().compareToIgnoreCase(w2.toString()));
+		setRowSorter(sorter);	
+		getColumnModel().getColumn(WordTableModel.COUNT_COLUMN).setCellRenderer(leftRenderer);	
 	}
 	
 	private void reapplyAttributes()
@@ -120,7 +145,9 @@ public class WordTable extends JTable {
 				Word word = getModel().getCurrentWordList().get(modelRow);
 				word.setHidden(hidden);
 			}
-			getModel().fireTableDataChanged();
+			getModel().setHiddenColumnEnabled(getModel().isHiddenColumnEnabled());
+			rebuildSorter();
+			Utils.updateRowHeight(WordTable.this, 0);
 		}
 		
 		private void capitalizeClicked()

@@ -94,7 +94,6 @@ public class SubtitlesPanel extends JPanel {
 	private SubtitleTextPane foreign_textpane;
 	private SubtitleTextPane primary_textpane;
 	private WordTable wordTable;
-	private TableRowSorter<WordTableModel> sorter;
 	private WordTableModel wordTableModel;
 	private Word selectedWord;
 	private int currentGoToReference;
@@ -110,7 +109,6 @@ public class SubtitlesPanel extends JPanel {
 	private JLabel table_info_label;
 	private WordFrequencyParser wordFrequencyParser;
 	private JScrollPane scrollPane_table;
-	private DefaultTableCellRenderer leftRenderer;
 	
 	public SubtitlesPanel() {
 		setLayout(new BorderLayout(0, 0));
@@ -132,9 +130,6 @@ public class SubtitlesPanel extends JPanel {
 		
 		wordTableModel = new WordTableModel(null, null);
 				
-		leftRenderer = new DefaultTableCellRenderer();
-		leftRenderer.setHorizontalAlignment(JLabel.LEFT);
-		
 		scrollPane_table = new JScrollPane();
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
 		gbc_scrollPane.fill = GridBagConstraints.BOTH;
@@ -371,7 +366,7 @@ public class SubtitlesPanel extends JPanel {
 			wordTableModel.setHiddenColumnEnabled(true);
 			toggleHidenButton.setText("Hide Hidden");
 		}
-		rebuildSorter();
+		wordTable.rebuildSorter();
 		updateTableInfoText();
 	}
 	
@@ -414,8 +409,8 @@ public class SubtitlesPanel extends JPanel {
 		List<Word> wordList = wordFrequencyParser.createWordFrequencyList(foreignSubtitleString, foreignDocumentSubtitles);
 		wordList.sort(Word::compareTo);
 		wordTableModel.setWordList(wordList, foreignDocumentSubtitles);
-		rebuildSorter();
-		
+		wordTable.rebuildSorter();
+		 
 		if(primaryLangFile != null) {
 			String primarySubtitles = FileUtils.readFileToString(primaryLangFile, Charset.forName("UTF-8"));
 			DocumentSubtitles primaryDocumentSubtitles = new DocumentSubtitles(primarySubtitles);
@@ -543,23 +538,6 @@ public class SubtitlesPanel extends JPanel {
 			Utils.logger.severe(e.getMessage());
 			//e.printStackTrace();
 		}
-	}
-	
-	private void rebuildSorter()
-	{
-		sorter = new TableRowSorter<>(wordTableModel);
-		ArrayList<RowSorter.SortKey> list = new ArrayList<>();
-		list.add(new RowSorter.SortKey(WordTableModel.COUNT_COLUMN, SortOrder.DESCENDING));
-		list.add(new RowSorter.SortKey(WordTableModel.WORD_COLUMN, SortOrder.ASCENDING));
-		if(wordTableModel.getColumnCount() == 7)
-			list.add(new RowSorter.SortKey(WordTableModel.HIDDEN_COLUMN, SortOrder.ASCENDING));
-		sorter.setSortKeys(list);
-		sorter.setSortable(WordTableModel.FOREIGN_EXAMPLE, false);
-		sorter.setSortable(WordTableModel.PRIMARY_EXAMPLE, false);
-		sorter.setSortable(WordTableModel.TAGS_COLUMN, false);
-		//sorter.setComparator(WordTableModel.WORD_COLUMN, (w1, w2) -> w1.toString().compareToIgnoreCase(w2.toString()));
-		wordTable.setRowSorter(sorter);	
-		wordTable.getColumnModel().getColumn(WordTableModel.COUNT_COLUMN).setCellRenderer(leftRenderer);	
 	}
 	
 	private void updateReferenceNavText()
