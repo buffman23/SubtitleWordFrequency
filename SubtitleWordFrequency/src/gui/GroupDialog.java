@@ -100,7 +100,7 @@ public class GroupDialog extends JDialog {
 			if(groupIn != null) {
 				resultGroup.setDefiniton(groupIn.getDefiniton());
 				resultGroup.setTags(groupIn.getTags());
-				resultGroup.setHidden(groupIn.isHidden());
+				resultGroup.setHidden(groupIn.getHidden());
 			}
 		}
 		this.dispose();

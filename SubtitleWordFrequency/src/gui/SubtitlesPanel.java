@@ -24,6 +24,7 @@ import com.google.gson.reflect.TypeToken;
 
 import SubtitleWordFrq.Caption;
 import SubtitleWordFrq.DocumentSubtitles;
+import SubtitleWordFrq.Hidden;
 import SubtitleWordFrq.ImportedGroup;
 import SubtitleWordFrq.SerializableWord;
 import SubtitleWordFrq.Utils;
@@ -486,7 +487,8 @@ public class SubtitlesPanel extends JPanel {
 					List<Word> assocWords = new ArrayList<>(importedWord.associatedWords.size());
 					// add imported Word to its own associated words list if not already. This is to prevent
 					// a group and a word existing at the same time with the same value.
-					if(!importedWord.associatedWords.contains(importedWord.toString())) {
+					String groupNameLower = importedWord.value.toLowerCase();
+					if(importedWord.associatedWords.stream().noneMatch(word -> word.toLowerCase().equals(groupNameLower))) {
 						importedWord.associatedWords.add(importedWord.toString());
 					}
 					for(String wordString : importedWord.associatedWords) {
@@ -498,7 +500,7 @@ public class SubtitlesPanel extends JPanel {
 					if(assocWords.size() > 0) {
 						Word group = new Word(importedWord.toString(), assocWords);
 						if(importedWord.hidden != null)
-							group.setHidden(importedWord.hidden);
+							group.setHidden(importedWord.hidden ? Hidden.ON : Hidden.OFF);
 						if(importedWord.definition != null)
 							group.setDefiniton(importedWord.definition);
 						if(importedWord.tags != null) 
@@ -518,7 +520,7 @@ public class SubtitlesPanel extends JPanel {
 					if(index >= 0) {
 						Word word = newWordList.get(index);
 						if(importedWord.hidden != null)
-							word.setHidden(importedWord.hidden);
+							word.setHidden(importedWord.hidden ? Hidden.ON : Hidden.OFF);
 						if(importedWord.definition != null)
 							word.setDefiniton(importedWord.definition);
 						if(importedWord.tags != null) 

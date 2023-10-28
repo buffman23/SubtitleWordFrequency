@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 import javax.swing.AbstractCellEditor;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JCheckBox;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -27,9 +28,11 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
+import SubtitleWordFrq.Hidden;
 import SubtitleWordFrq.Utils;
 import SubtitleWordFrq.Word;
 
@@ -42,7 +45,7 @@ public class WordTable extends JTable {
 		
 		leftRenderer = new DefaultTableCellRenderer();
 		leftRenderer.setHorizontalAlignment(JLabel.LEFT);
-		
+		setDefaultRenderer(Hidden.class, new HiddenRenderer());
 		setComponentPopupMenu(new TablePopup());
 		
 	}
@@ -128,17 +131,22 @@ public class WordTable extends JTable {
 			this.add(toggleHiddenMenu);
 			
 			JMenuItem toggleHiddenOnMenuItem = new JMenuItem("On");
-			toggleHiddenOnMenuItem.addActionListener(e -> toggleHidden(true));
+			toggleHiddenOnMenuItem.addActionListener(e -> toggleHidden(Hidden.ON));
 			toggleHiddenMenu.add(toggleHiddenOnMenuItem);
 			
 			JMenuItem toggleHiddenOffMenuItem = new JMenuItem("Off");
-			toggleHiddenOffMenuItem.addActionListener(e -> toggleHidden(false));
+			toggleHiddenOffMenuItem.addActionListener(e -> toggleHidden(Hidden.OFF));
 			toggleHiddenMenu.add(toggleHiddenOffMenuItem);
+			
+			JMenuItem toggleHiddenSessionMenuItem = new JMenuItem("Session");
+			toggleHiddenSessionMenuItem.addActionListener(e -> toggleHidden(Hidden.SESSION));
+			toggleHiddenSessionMenuItem.setToolTipText("Hides word(s) only for this session");
+			toggleHiddenMenu.add(toggleHiddenSessionMenuItem);
 			
 			this.addPopupMenuListener(this);
 		}
 		
-		private void toggleHidden(boolean hidden)
+		private void toggleHidden(Hidden hidden)
 		{
 			for(int tableRow : getSelectedRows()) {
 				int modelRow = convertRowIndexToModel(tableRow);
@@ -246,7 +254,7 @@ public class WordTable extends JTable {
 			{
 				word.setDefiniton(selectedGroup.getDefiniton());
 				word.setTags(selectedGroup.getTags());
-				word.setHidden(selectedGroup.isHidden());
+				word.setHidden(selectedGroup.getHidden());
 			}
 			
 			// create new word list
@@ -378,6 +386,33 @@ public class WordTable extends JTable {
 		}
 	}
 	
+	private class HiddenRenderer extends DefaultTableCellRenderer
+	{
+		TableCellRenderer checkBoxRenderer;
+		private HiddenRenderer()
+		{
+			checkBoxRenderer = WordTable.this.getDefaultRenderer(Boolean.class);
+		}
+		
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+				int row, int column) 
+		{
+			String text = null;
+			if(value instanceof Hidden) {
+				Hidden hidden = (Hidden)value;
+				value = hidden != hidden.OFF;
+				if(hidden == Hidden.SESSION)
+					text = "Session";
+			}
+			
+			JCheckBox checkBox = (JCheckBox)checkBoxRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+			checkBox.setText(text);
+			return checkBox;
+		}
+	
+	}
+	
 	private static class HiddenCellEditor extends DefaultCellEditor
 	{
 
@@ -387,7 +422,13 @@ public class WordTable extends JTable {
 		
 		public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row,
 				int column) {
-			return super.getTableCellEditorComponent(table, value, isSelected, row, column);
+			String text = null;
+			Hidden hidden = (Hidden)value;
+			if(hidden == Hidden.SESSION)
+				text = "Session";
+			JCheckBox checkBox = (JCheckBox)super.getTableCellEditorComponent(table, hidden != Hidden.OFF, isSelected, row, column);
+			checkBox.setText(text);
+			return checkBox;
 		}
 		
 		@Override

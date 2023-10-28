@@ -12,6 +12,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import SubtitleWordFrq.Caption;
 import SubtitleWordFrq.DocumentSubtitles;
+import SubtitleWordFrq.Hidden;
 import SubtitleWordFrq.SerializableWord;
 import SubtitleWordFrq.Word;
 
@@ -21,9 +22,9 @@ public class WordTableModel extends AbstractTableModel {
 			FOREIGN_EXAMPLE = 4, PRIMARY_EXAMPLE = 5, HIDDEN_COLUMN = 6;
 	private static final String[] COLUMN_NAMES = new String[] { "Word", "Definition", "Tags", "Count", "Foreign Example", "Primary Example", "Hidden" };
 	private static final Class<?>[] COLUMN_CLASSES = new Class<?>[] { 
-		Word.class, String.class, String.class,Integer.class, String.class, String.class, Boolean.class
+		Word.class, String.class, String.class,Integer.class, String.class, String.class, Hidden.class
 	};
-	private static final Predicate<Word> IS_NOT_HIDDEN_PREDICATE = word -> !word.isHidden();
+	private static final Predicate<Word> IS_NOT_HIDDEN_PREDICATE = word -> word.getHidden() == Hidden.OFF;
 	
 	private List<Word> wordFrequencyList;
 	private List<Word> notHiddenList;
@@ -115,7 +116,7 @@ public class WordTableModel extends AbstractTableModel {
 						.collect(Collectors.joining(" "));
 						//TODO make joining string configurable
 			case HIDDEN_COLUMN:
-				return word.isHidden();
+				return word.getHidden();
 		}
 		
 		return null;
@@ -127,8 +128,13 @@ public class WordTableModel extends AbstractTableModel {
 		if(wordFrequencyList == null)
 			return;
 		
-		if(columnIndex == HIDDEN_COLUMN)
-			getCurrentWordList().get(rowIndex).setHidden((Boolean)value);
+		if(columnIndex == HIDDEN_COLUMN) {
+			if(value instanceof Boolean) {
+				Boolean b = (Boolean)value;
+				value = b ? Hidden.ON : Hidden.OFF;
+			}
+			getCurrentWordList().get(rowIndex).setHidden((Hidden)value);
+		}
 		
 		if(columnIndex == DEFINITION_COLUMN)
 			getCurrentWordList().get(rowIndex).setDefiniton(value.toString());
@@ -191,7 +197,7 @@ public class WordTableModel extends AbstractTableModel {
 			return List.of();
 		
 		return wordFrequencyList.stream()
-			.filter(word -> word.isHidden() || word.getDefiniton().length() > 0 || 
+			.filter(word -> word.getHidden() == Hidden.ON || word.getDefiniton().length() > 0 || 
 					(word.getAssociatedWords() != null && word.getAssociatedWords().size() != 0) ||
 					word.getTags() != null && word.getTags().size() > 0)
 			.map(word -> new SerializableWord(word))

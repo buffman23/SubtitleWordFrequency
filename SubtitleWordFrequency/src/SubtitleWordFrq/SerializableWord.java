@@ -28,7 +28,7 @@ public class SerializableWord implements Comparable<SerializableWord> {
 			this.definition = word.getDefiniton();
 		if(word.getTags() != null && word.getTags().size() > 0)
 			this.tags = word.getTags();
-		if(word.isHidden())
+		if(word.getHidden() != null && word.getHidden() == Hidden.ON)
 			this.hidden = true;
 		if(word.getAssociatedWords() != null)
 			this.associatedWords = word.getAssociatedWords().stream().map(Word::toString).collect(Collectors.toList());

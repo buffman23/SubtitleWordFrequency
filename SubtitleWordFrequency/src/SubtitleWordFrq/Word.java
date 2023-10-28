@@ -16,7 +16,7 @@ public class Word implements Comparable<Word> {
 	
 	private List<String> tags; 
 	
-	private boolean hidden; // if user would like to hide word (b/c they already know it)
+	private Hidden hidden; // if user would like to hide word (b/c they already know it)
 	
 	private boolean collapsed;
 	
@@ -33,6 +33,7 @@ public class Word implements Comparable<Word> {
 		// I decided to use LinkedList since many words will be low frequency and therefore not have many references.
 		this.references = new LinkedList<>();
 		this.collapsed = true;
+		this.hidden = Hidden.OFF;
 	}
 
 	public Word(String value, Caption origin)
@@ -126,11 +127,11 @@ public class Word implements Comparable<Word> {
 		this.tags = tags;
 	}
 
-	public boolean isHidden() {
+	public Hidden getHidden() {
 		return hidden;
 	}
 
-	public void setHidden(boolean hidden) {
+	public void setHidden(Hidden hidden) {
 		this.hidden = hidden;
 	}
 	
@@ -231,7 +232,8 @@ public class Word implements Comparable<Word> {
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(value, definiton, tags, hidden, associatedWords);
+		// hashcode is used to check if a session needs to be saved. We will treat Hidden.OFF and Hidden.SESSION as the same in this case.
+		return Objects.hash(value, definiton, tags, hidden == Hidden.ON, associatedWords);
 	}
 
 }
