@@ -33,7 +33,7 @@ public class Utils {
 	public static<T> T deserialize(File file, Type type) throws IOException
 	{
 		if(file.exists()) {
-			try(FileReader fr = new FileReader(file)){
+			try(FileReader fr = new FileReader(file, Charset.forName("UTF-8"))){
 				return gson.fromJson(fr, type);
 			}
 		}
@@ -49,7 +49,7 @@ public class Utils {
 	
 	public static<T> void serialize(T object, File file, Type type) throws IOException
 	{
-		try(FileWriter fr = new FileWriter(file)){
+		try(FileWriter fr = new FileWriter(file, Charset.forName("UTF-8"))){
 			gson.toJson(object, type, fr);
 		}
 	}
