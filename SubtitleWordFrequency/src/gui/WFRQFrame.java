@@ -129,8 +129,9 @@ public class WFRQFrame extends JFrame implements WindowListener {
 			for(int i = deserializedRecentSubtitles.size() - 1; i >=0; --i) {
 				List<String> pair = deserializedRecentSubtitles.get(i);
 				File foreignFile = new File(pair.get(0));
-				File primaryFile = new File(pair.get(1));
-				if(foreignFile.exists() && primaryFile.exists()) {
+				File primaryFile = pair.size() > 1 ? new File(pair.get(1)) : null;
+
+				if(foreignFile.exists() && (primaryFile == null || primaryFile.exists())) {
 					addToRecents(foreignFile, primaryFile);
 				}
 			}
@@ -264,15 +265,18 @@ public class WFRQFrame extends JFrame implements WindowListener {
 				
 			if(response == JOptionPane.YES_OPTION) {
 				JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
-				if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
-					try {
-						subtitles_panel.exportWordData(chooser.getSelectedFile());
-					} catch (IOException e) {
-						Utils.logger.severe(e.getMessage());
-						//e.printStackTrace();
+				if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+					File selectedFile = chooser.getSelectedFile();
+					if(!selectedFile.getName().toLowerCase().endsWith(".wrdtbl")) {
+						selectedFile = new File(selectedFile.getAbsolutePath() + ".wrdtbl");
 					}
-				else 
-					return;
+					try {
+						subtitles_panel.exportWordData(selectedFile);
+					} catch (IOException e1) {
+						Utils.logger.severe(e1.getMessage());
+						//e1.printStackTrace();
+					}
+				}
 			}
 		}
 		
@@ -302,7 +306,7 @@ public class WFRQFrame extends JFrame implements WindowListener {
 					FilenameUtils.getName(pair.get(0)), 
 					FilenameUtils.getName(pair.get(1)));
 		} else {
-			text = pair.get(0);
+			text = FilenameUtils.getName(pair.get(0));
 		}
 		
 		if(recentSubtitles.size() == MAX_RECENTS_SIZE) {
@@ -353,13 +357,18 @@ public class WFRQFrame extends JFrame implements WindowListener {
 				
 				if(response == JOptionPane.YES_OPTION) {
 					JFileChooser chooser = Utils.fileChooser("Word Table (*.wrdtbl)", ".wrdtbl");
-					if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+					if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+						File selectedFile = chooser.getSelectedFile();
+						if(!selectedFile.getName().toLowerCase().endsWith(".wrdtbl")) {
+							selectedFile = new File(selectedFile.getAbsolutePath() + ".wrdtbl");
+						}
 						try {
-							subtitles_panel.exportWordData(chooser.getSelectedFile());
+							subtitles_panel.exportWordData(selectedFile);
 						} catch (IOException e1) {
 							Utils.logger.severe(e1.getMessage());
 							//e1.printStackTrace();
 						}
+					}
 					else {
 						return;
 					}
