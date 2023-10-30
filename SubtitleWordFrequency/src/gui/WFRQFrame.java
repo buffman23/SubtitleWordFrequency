@@ -2,7 +2,6 @@ package gui;
 
 import javax.swing.JFrame;
 import java.awt.BorderLayout;
-import java.awt.Panel;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -18,9 +17,6 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.System.Logger;
-import java.security.KeyStore.PrivateKeyEntry;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 

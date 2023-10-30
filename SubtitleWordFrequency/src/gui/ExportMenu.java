@@ -2,25 +2,12 @@ package gui;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
-import javax.swing.filechooser.FileFilter;
-
-import org.apache.commons.io.FileUtils;
-
-import com.google.gson.reflect.TypeToken;
-
-import SubtitleWordFrq.SerializableWord;
 import SubtitleWordFrq.Utils;
-import SubtitleWordFrq.Word;
 
 public class ExportMenu extends JMenu
 {

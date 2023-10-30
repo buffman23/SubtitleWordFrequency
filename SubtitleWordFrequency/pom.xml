@@ -13,6 +13,16 @@
           <release>18</release>
         </configuration>
       </plugin>
+      <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <archive>
+              <manifest>
+                <mainClass>gui.WFRQFrame</mainClass>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
     </plugins>
   </build>
   <dependencies>

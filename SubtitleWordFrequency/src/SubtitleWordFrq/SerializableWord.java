@@ -3,8 +3,6 @@ package SubtitleWordFrq;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.management.InstanceNotFoundException;
-
 import com.google.gson.annotations.SerializedName;
 
 public class SerializableWord implements Comparable<SerializableWord> {
