@@ -8,12 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
-public class DocumentSubtitles implements Iterable<Caption> {
-	public static final int MATCH = 0, NO_MATCH = 1;
-	
-	private List<Caption> captions;
-	private List<ImmutablePair<Caption, Integer>>[] pairedCaptions;
-	private String text;
+public class DocumentSubtitles extends Document {
 	
 	public DocumentSubtitles(String subtitles) throws IOException
 	{
@@ -80,25 +75,25 @@ public class DocumentSubtitles implements Iterable<Caption> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void pairWith(DocumentSubtitles otherSubtitles)
+	public void pairWith(Document otherSubtitles)
 	{
 		pairedCaptions = new LinkedList[captions.size()];
 		for(int i = 0; i < pairedCaptions.length; ++i)
 			pairedCaptions[i] = new LinkedList<>(); 
 		
-		List<Caption> otherCaptions = otherSubtitles.captions;
+		List<Caption> otherCaptions = otherSubtitles.getCaptions();
 		int i = 0, j = 0;
 		Caption caption = null;
 		Caption otherCaption = null;
 		
-		while(i < captions.size() && j < otherSubtitles.captions.size())
+		while(i < captions.size() && j < otherSubtitles.getCaptions().size())
 		{
 			caption = captions.get(i);
 			otherCaption = otherCaptions.get(j);
 			
 			if(caption.isOverlappingExclusive(otherCaption)) {
 				pairedCaptions[i].add(new ImmutablePair<>(otherCaption, MATCH));
-				if(j + 1 < otherSubtitles.captions.size()) {
+				if(j + 1 < otherSubtitles.getCaptions().size()) {
 					Caption nextOtherCaption = otherCaptions.get(j + 1);
 					if(nextOtherCaption.startTime.isBefore(caption.endTime)) {
 						++j;
@@ -123,50 +118,5 @@ public class DocumentSubtitles implements Iterable<Caption> {
 		for(;i < captions.size(); ++i) {
 			pairedCaptions[i].add(new ImmutablePair<>(otherCaption, NO_MATCH));
 		}
-	}
-	
-	public Caption getCaptionAtTextPostion(int textPosition)
-	{
-		// TODO optimize by using binary search
-		for(Caption caption : captions) {
-			if(textPosition >= caption.textPosition && textPosition < (caption.textPosition + caption.textLength))
-				return caption;
-		}
-		
-		return null;
-	}
-	
-	public List<Caption> getCaptions() {
-		return captions;
-	}
-
-	public List<ImmutablePair<Caption, Integer>>[] getPairedCaptions() {
-		return pairedCaptions;
-	}
-	
-	public List<ImmutablePair<Caption, Integer>> getPairedCaptions(Caption caption) {
-		if(pairedCaptions == null)
-			return null;
-		
-		return pairedCaptions[caption.sequenceNumber - 1];
-	}
-	
-	private class Caret
-	{
-		public int pos;
-		
-		public void moveLine(String str)
-		{
-			pos += str.length() + 1;
-		}
-	}
-
-	@Override
-	public Iterator<Caption> iterator() {
-		return captions.iterator();
-	}
-
-	public String getText() {
-		return text;
 	}
 }

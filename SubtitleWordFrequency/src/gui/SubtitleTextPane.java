@@ -16,6 +16,7 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 import SubtitleWordFrq.Caption;
+import SubtitleWordFrq.Document;
 import SubtitleWordFrq.DocumentSubtitles;
 import SubtitleWordFrq.WordFrequencyParser;
 
@@ -30,22 +31,22 @@ public class SubtitleTextPane extends JTextPane implements MouseListener, MouseM
     	StyleConstants.setUnderline(NO_UNDERLINE, false);
     }
     
-    private DocumentSubtitles documentSubtitles;
+    private Document documentSubtitles;
     private int hoveredTextStart;
     private int hoveredTextEnd;
     
-	public SubtitleTextPane(DocumentSubtitles documentSubtitles)
+	public SubtitleTextPane(Document documentSubtitles)
 	{
 		this.setDocumentSubtitles(documentSubtitles);
 		this.hoveredTextStart = -1;
 		addMouseMotionListener(this);
 	}
 	
-	public DocumentSubtitles getDocumentSubtitles() {
+	public Document getDocumentSubtitles() {
 		return documentSubtitles;
 	}
 
-	public void setDocumentSubtitles(DocumentSubtitles documentSubtitles) {
+	public void setDocumentSubtitles(Document documentSubtitles) {
 		this.documentSubtitles = documentSubtitles;
 	}
 

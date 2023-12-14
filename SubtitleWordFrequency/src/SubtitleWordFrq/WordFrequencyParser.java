@@ -12,7 +12,7 @@ public class WordFrequencyParser {
 		preprocessConfig = PreprocessConfig.load();
 	}
 
-	public ArrayList<Word> createWordFrequencyList(String subtitles, DocumentSubtitles documentSubtitles)
+	public ArrayList<Word> createWordFrequencyList(String subtitles, Document documentSubtitles)
 	{
 		TreeMap<String, Word> wordMap = new TreeMap<>();
 		

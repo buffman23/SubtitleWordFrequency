@@ -11,6 +11,7 @@ import javax.swing.table.AbstractTableModel;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import SubtitleWordFrq.Caption;
+import SubtitleWordFrq.Document;
 import SubtitleWordFrq.DocumentSubtitles;
 import SubtitleWordFrq.Hidden;
 import SubtitleWordFrq.SerializableWord;
@@ -28,11 +29,11 @@ public class WordTableModel extends AbstractTableModel {
 	
 	private List<Word> wordFrequencyList;
 	private List<Word> notHiddenList;
-	private DocumentSubtitles documentSubtitles;
+	private Document documentSubtitles;
 	private boolean hiddenColumnEnabled;
 	private Integer initialHashCode;
 
-	public WordTableModel(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles)
+	public WordTableModel(List<Word> wordFrequencyList, Document documentSubtitles)
 	{
 		this.hiddenColumnEnabled = true;
 		this.setWordList(wordFrequencyList, documentSubtitles);
@@ -166,7 +167,7 @@ public class WordTableModel extends AbstractTableModel {
 		setWordList(wordFrequencyList, null);
 	}
 
-	public void setWordList(List<Word> wordFrequencyList, DocumentSubtitles documentSubtitles) {
+	public void setWordList(List<Word> wordFrequencyList, Document documentSubtitles) {
 		// only record hashcode the first time the model's source list is set
 		if(this.wordFrequencyList == null && wordFrequencyList != null)
 			initialHashCode = wordFrequencyList.hashCode();

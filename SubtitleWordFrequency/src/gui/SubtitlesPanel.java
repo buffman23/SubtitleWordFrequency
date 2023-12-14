@@ -20,6 +20,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import com.google.gson.reflect.TypeToken;
 
 import SubtitleWordFrq.Caption;
+import SubtitleWordFrq.Document;
 import SubtitleWordFrq.DocumentSubtitles;
 import SubtitleWordFrq.Hidden;
 import SubtitleWordFrq.ImportedGroup;
@@ -101,7 +102,7 @@ public class SubtitlesPanel extends JPanel {
 	private JButton next_button;
 	private JButton prev_button;
 
-	private DocumentSubtitles foreignDocumentSubtitles;
+	private Document foreignDocumentSubtitles;
 	private JLabel table_info_label;
 	private WordFrequencyParser wordFrequencyParser;
 	private JScrollPane scrollPane_table;
@@ -396,8 +397,8 @@ public class SubtitlesPanel extends JPanel {
 	
 	public void loadSubtitles(File foreignLangFile, File primaryLangFile) throws IOException
 	{
-		foreignSubtitleString = FileUtils.readFileToString(foreignLangFile, Charset.forName("UTF-8"));
-		foreignDocumentSubtitles = new DocumentSubtitles(foreignSubtitleString);
+		foreignSubtitleString = FileUtils.readFileToString(foreignLangFile, Charset.forName("UTF-8")).replace("\r", "");
+		foreignDocumentSubtitles = Utils.createDocument(foreignLangFile, foreignSubtitleString);
 		foreign_textpane.setDocumentSubtitles(foreignDocumentSubtitles);
 		foreign_textpane.setText(foreignSubtitleString);
 		
@@ -408,8 +409,8 @@ public class SubtitlesPanel extends JPanel {
 		wordTable.rebuildSorter();
 		 
 		if(primaryLangFile != null) {
-			String primarySubtitles = FileUtils.readFileToString(primaryLangFile, Charset.forName("UTF-8"));
-			DocumentSubtitles primaryDocumentSubtitles = new DocumentSubtitles(primarySubtitles);
+			String primarySubtitles = FileUtils.readFileToString(primaryLangFile, Charset.forName("UTF-8")).replace("\r", "");
+			Document primaryDocumentSubtitles = Utils.createDocument(primaryLangFile, primarySubtitles);
 			primary_textpane.setDocumentSubtitles(primaryDocumentSubtitles);
 			primary_textpane.setText(primarySubtitles);
 			

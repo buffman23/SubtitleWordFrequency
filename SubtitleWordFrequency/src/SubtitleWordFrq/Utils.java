@@ -15,6 +15,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
 import com.google.gson.Gson;
@@ -24,6 +25,19 @@ import gui.WordTableModel;
 public class Utils {
 	public static final Logger logger = Logger.getLogger(Utils.class.getName());
 	public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	
+	public static Document createDocument(File file, String content) throws IOException
+	{
+		String extension = FilenameUtils.getExtension(file.getName());
+		switch (extension)
+		{
+		case "srt":
+			return new DocumentSubtitles(content);
+		default:
+			return new DocumentPlainText(content);
+		}
+	}
+	
 	
 	public static<T> T deserialize(String filepath, Type type) throws IOException
 	{
